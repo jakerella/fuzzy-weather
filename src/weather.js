@@ -50,7 +50,14 @@ function getWeatherForDate(requestedDate) {
         debug('Getting weather for %s', requestedDate);
 
         if (!OPTIONS.apiKey) {
+            debug('API key?', OPTIONS.apiKey);
             return reject(new Error('No API key for Dark Sky provided'));
+        }
+
+        if (!OPTIONS.lat || !OPTIONS.lng ||
+            typeof(OPTIONS.lat) !== 'number' || typeof(OPTIONS.lng) !== 'number') {
+            debug('lat/lng?', OPTIONS.lat, OPTIONS.lng);
+            return reject(new Error('Lattitude and longitude must be provided and be numeric'));
         }
 
         let now = new Date();
@@ -73,7 +80,7 @@ function getWeatherForDate(requestedDate) {
         }
 
         request({
-            url: `https://api.forecast.io/forecast/${OPTIONS.apiKey}/${OPTIONS.location.lat},${OPTIONS.location.lng}`
+            url: `https://api.darksky.net/forecast/${OPTIONS.apiKey}/${OPTIONS.location.lat},${OPTIONS.location.lng}`
         }, function(err, res, body) {
             let data;
             let text = 'We got some weather.';
