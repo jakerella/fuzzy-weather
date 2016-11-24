@@ -30,132 +30,132 @@ const OPTIONS = {
 };
 
 module.exports = function(options = {}) {
-    _.merge(OPTIONS, options);
-    debug('Setting up new fuzzy-weather with options:', OPTIONS);
+    let o = {};
+    _.merge(o, OPTIONS, options);
+    debug('Setting up new fuzzy-weather with options:', o);
     return getWeatherForDate;
-};
 
-/**
- * The publicly available function for getting weather for a given date.
- *
- * @param  {String|Number} requestedDate Anything that can be passed into new Date() (OPTIONAL, will use current date otherwise)
- * @return {Promise}                     Will resolve (hopefully) with an object containing the weather report:
- *                                         - text {String} the text to read out
- *                                         - type {String} "day-summary" or "hour-by-hour"
- *                                         - date {Date} the date this weather report is for
- *                                       May also reject with an {Error}
- */
-function getWeatherForDate(requestedDate) {
-    return new Promise(function (resolve, reject) {
-        debug('Getting weather for %s', requestedDate);
+    /**
+     * The publicly available function for getting weather for a given date.
+     *
+     * @param  {String|Number} requestedDate Anything that can be passed into new Date() (OPTIONAL, will use current date otherwise)
+     * @return {Promise}                     Will resolve (hopefully) with an object containing the weather report:
+     *                                         - text {String} the text to read out
+     *                                         - type {String} "day-summary" or "hour-by-hour"
+     *                                         - date {Date} the date this weather report is for
+     *                                       May also reject with an {Error}
+     */
+    function getWeatherForDate(requestedDate) {
+        return new Promise(function (resolve, reject) {
+            debug('Getting weather for %s', requestedDate);
 
-        if (!OPTIONS.apiKey) {
-            debug('API key?', OPTIONS.apiKey);
-            return reject(new Error('No API key for Dark Sky provided'));
-        }
+            if (!o.apiKey) {
+                debug('API key?', o.apiKey);
+                return reject(new Error('No API key for Dark Sky provided'));
+            }
 
-        if (!OPTIONS.lat || !OPTIONS.lng ||
-            typeof(OPTIONS.lat) !== 'number' || typeof(OPTIONS.lng) !== 'number') {
-            debug('lat/lng?', OPTIONS.lat, OPTIONS.lng);
-            return reject(new Error('Lattitude and longitude must be provided and be numeric'));
-        }
+            if (!o.location || !o.location.lat || !o.location.lng ||
+                typeof(o.location.lat) !== 'number' || typeof(o.location.lng) !== 'number') {
+                debug('lat/lng?', o.location.lat, o.location.lng);
+                return reject(new Error('Lattitude and longitude must be provided and be numeric'));
+            }
 
-        let now = new Date();
+            let now = new Date();
 
-        // No date? no problem! Just get today's weather.
-        if (!requestedDate) {
-            requestedDate = now.getTime();
-        }
+            // No date? no problem! Just get today's weather.
+            if (!requestedDate) {
+                requestedDate = now.getTime();
+            }
 
-        let reqDateObj = new Date(requestedDate);
-        if (!reqDateObj.getTime()) {
-            return reject(new Error('Please provide a valid date to check the weather for!'));
-        }
-        let simpleDate = getCYMD(reqDateObj);
+            let reqDateObj = new Date(requestedDate);
+            if (!reqDateObj.getTime()) {
+                return reject(new Error('Please provide a valid date to check the weather for!'));
+            }
+            let simpleDate = getCYMD(reqDateObj);
 
-        if (simpleDate < getCYMD(now)) {
-            return reject(new Error(`Unable to get weather foreacast for date in the past (${simpleDate})`));
-        } else if (requestedDate.getTime() > (now.getTime() + (86400000 * 7))) {
-            return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`));
-        }
+            if (simpleDate < getCYMD(now)) {
+                return reject(new Error(`Unable to get weather foreacast for date in the past (${simpleDate})`));
+            } else if (reqDateObj.getTime() > (now.getTime() + (86400000 * 7))) {
+                return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`));
+            }
 
-        request({
-            url: `https://api.darksky.net/forecast/${OPTIONS.apiKey}/${OPTIONS.location.lat},${OPTIONS.location.lng}`
-        }, function(err, res, body) {
-            let data;
-            let text = 'We got some weather.';
-            let type = 'summary';
+            request({
+                url: `https://api.darksky.net/forecast/${o.apiKey}/${o.location.lat},${o.location.lng}`
+            }, function(err, res, body) {
+                let data;
+                let text = 'We got some weather.';
+                let type = 'summary';
 
-            if (err) {
-                debug('Error from API call', err);
-                if (!(err instanceof Error)) {
-                    err = new Error(''+err);
+                if (err) {
+                    debug('Error from API call', err);
+                    if (!(err instanceof Error)) {
+                        err = new Error(''+err);
+                    }
+                    return reject(err);
+                } else if (res.statusCode > 299) {
+                    debug('Non-200 status code from weather API:', res.statusCode, body);
+                    return reject(
+                        new Error(`There was a problem getting weather data: received non-200 status code (${res.statusCode})`)
+                    );
                 }
-                return reject(err);
-            } else if (res.statusCode > 299) {
-                debug('Non-200 status code from weather API:', res.statusCode, body);
-                return reject(
-                    new Error(`There was a problem getting weather data: received non-200 status code (${res.statusCode})`)
-                );
-            }
 
-            try {
-                data = JSON.parse(body);
-            } catch(e) {
-                debug('Invalid JSON data from weather API:', body);
-                return reject(new Error('The API did not return valid data.'));
-            }
+                try {
+                    data = JSON.parse(body);
+                } catch(e) {
+                    debug('Invalid JSON data from weather API:', body);
+                    return reject(new Error('The API did not return valid data.'));
+                }
 
 
-            if (getCYMD(now) === simpleDate ||
-                getCYMD(now.getTime() + 86400000) === simpleDate) {
-                // for today or tomorrow, use hour by hour (ish) summary
-                debug(`getting hour-by-hour summary for ${simpleDate}`);
-                text = getHourByHour(reqDateObj, data);
-                type = 'hour-by-hour';
+                if (getCYMD(now) === simpleDate ||
+                    getCYMD(now.getTime() + 86400000) === simpleDate) {
+                    // for today or tomorrow, use hour by hour (ish) summary
+                    debug(`getting hour-by-hour summary for ${simpleDate}`);
+                    text = getHourByHour(reqDateObj, data);
+                    type = 'hour-by-hour';
 
-            } else {
-                // for any other day just give the summary of that day
-                debug(`getting daily summary for ${simpleDate}`);
-                type = 'day-summary';
-                data.daily.data.forEach(function(dailyData) {
-                    if (getCYMD(dailyData.time * 1000) === simpleDate) {
-                        dailyData.type = 'daily';
-                        let day = getDayOfWeek(reqDateObj, true);
-                        text = getDailyConditions(dailyData)
-                            .map(function(condition, i) {
-                                let getCondition;
-                                try {
-                                    getCondition = require('./conditions/' + condition.topic);
-                                } catch(err) {
-                                    debug('No condition module for %s', condition.topic);
-                                }
+                } else {
+                    // for any other day just give the summary of that day
+                    debug(`getting daily summary for ${simpleDate}`);
+                    type = 'day-summary';
+                    data.daily.data.forEach(function(dailyData) {
+                        if (getCYMD(dailyData.time * 1000) === simpleDate) {
+                            dailyData.type = 'daily';
+                            let day = getDayOfWeek(reqDateObj, true);
+                            text = getDailyConditions(o, dailyData)
+                                .map(function(condition, i) {
+                                    let getCondition;
+                                    try {
+                                        getCondition = require('./conditions/' + condition.topic);
+                                    } catch(err) {
+                                        debug('No condition module for %s', condition.topic);
+                                    }
 
-                                if (!getCondition) { return ''; }
+                                    if (!getCondition) { return ''; }
 
-                                if (i === 0) {
-                                    return render(getCondition.headline(), {
+                                    if (i === 0) {
+                                        return render(getCondition.headline(), {
+                                            day: day
+                                        });
+                                    }
+                                    return render(getCondition(condition, dailyData), {
                                         day: day
                                     });
-                                }
-                                return render(getCondition(condition, dailyData), {
-                                    day: day
-                                });
-                            })
-                            .join(' ');
-                    }
-                });
-            }
+                                })
+                                .join(' ');
+                        }
+                    });
+                }
 
-            resolve({
-                text: text,
-                type: type,
-                date: reqDateObj
+                resolve({
+                    text: text,
+                    type: type,
+                    date: reqDateObj
+                });
             });
         });
-    });
-}
-
+    }
+};
 
 /*
 data.hourly.data[0] - 48
@@ -193,14 +193,15 @@ function getHourByHour() {
  * the data. Also included is a text `topic` and `probability` (although the
  * probability is often times just `1`).
  *
+ * @param  {Object} o    The options for this instance of fuzzy weather
  * @param  {Object} data Daily summary data as returned from Dark Sky API
  * @return {Array}       Sorted conditions, each entry being an object with:
  *                       - topic {String} for example: "rain", "wind", "clouds"
  *                       - probability {Number} percentage represented as 0-1
  *                       - level {Number} The severity from 1-10 (could be outside of this)
  */
-function getDailyConditions(data) {
-    let avgTemps = OPTIONS.avgTemps[(new Date(data.time * 1000)).getMonth()],
+function getDailyConditions(o, data) {
+    let avgTemps = o.avgTemps[(new Date(data.time * 1000)).getMonth()],
         conditions = [];
 
     // -------- RAIN
@@ -236,51 +237,51 @@ function getDailyConditions(data) {
     // -------- HEAT (and humidity)
     } else if (data.temperatureMax > avgTemps.high || data.apparentTemperatureMax > (avgTemps.high + 5)) {
         let level = Math.max((data.temperatureMax - avgTemps.high), (data.apparentTemperatureMax - avgTemps.high));
-        if (data.dewPoint > OPTIONS.dewPointBreak || data.humidity > OPTIONS.humidityBreak) {
-            level += ((data.dewPoint - OPTIONS.dewPointBreak) + (data.humidity - OPTIONS.humidityBreak)) / 2;
+        if (data.dewPoint > o.dewPointBreak || data.humidity > o.humidityBreak) {
+            level += ((data.dewPoint - o.dewPointBreak) + (data.humidity - o.humidityBreak)) / 2;
         }
 
         conditions.push({
-            topic: (data.dewPoint > OPTIONS.dewPointBreak || data.humidity > OPTIONS.humidityBreak) ? 'heat-humid' : 'heat',
+            topic: (data.dewPoint > o.dewPointBreak || data.humidity > o.humidityBreak) ? 'heat-humid' : 'heat',
             probability: 1,
             level: level
         });
 
     // -------- HUMIDITY
-    } else if (data.dewPoint > (OPTIONS.dewPointBreak * 0.90) && data.humidity > (OPTIONS.humidityBreak * 0.90)) {
+    } else if (data.dewPoint > (o.dewPointBreak * 0.90) && data.humidity > (o.humidityBreak * 0.90)) {
         conditions.push({
             topic: 'humidity',
             probability: 1,
-            level: (data.dewPoint - OPTIONS.dewPointBreak) + (data.humidity - OPTIONS.humidityBreak)
+            level: (data.dewPoint - o.dewPointBreak) + (data.humidity - o.humidityBreak)
         });
 
     // -------- COLD (and windy)
     } else if (data.temperatureMin < avgTemps.low || data.apparentTemperatureMin < (avgTemps.low - 5)) {
         let level = Math.max((avgTemps.low - data.temperatureMin), (avgTemps.low - data.apparentTemperatureMin));
-        if (data.windSpeed > OPTIONS.windBreak) {
-            level += ((data.windSpeed - OPTIONS.windBreak) / 5);
+        if (data.windSpeed > o.windBreak) {
+            level += ((data.windSpeed - o.windBreak) / 5);
         }
 
         conditions.push({
-            topic: (data.windSpeed > OPTIONS.windBreak) ? 'cold-wind' : 'cold',
+            topic: (data.windSpeed > o.windBreak) ? 'cold-wind' : 'cold',
             probability: 1,
             level: level
         });
 
     // -------- CLOUDS
-    } else if (data.cloudCover > OPTIONS.cloudBreak) {
+    } else if (data.cloudCover > o.cloudBreak) {
         conditions.push({
             topic: 'clouds',
             probability: 1,
-            level: (data.cloudCover - OPTIONS.cloudBreak) * 50
+            level: (data.cloudCover - o.cloudBreak) * 50
         });
 
     // -------- WIND
-    } else if (data.windSpeed > OPTIONS.windBreak) {
+    } else if (data.windSpeed > o.windBreak) {
         conditions.push({
             topic: 'wind',
             probability: 1,
-            level: (data.windSpeed - OPTIONS.windBreak) / 2
+            level: (data.windSpeed - o.windBreak) / 2
         });
     }
 
@@ -324,7 +325,7 @@ function getDailyConditions(data) {
 // function getDailyHumidityText(data) {
 //     let text;
 //
-//     if (data.dewPoint > OPTIONS.dewPointBreak && data.humidity > OPTIONS.humidityBreak) {
+//     if (data.dewPoint > o.dewPointBreak && data.humidity > o.humidityBreak) {
 //         text = 'The relative humidity will be near ' + (data.humidity * 100) +
 //             ' percent with the dew point at ' + Math.round(data.dewPoint);
 //     } else if (data.humidity < 0.4) {
