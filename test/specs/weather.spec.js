@@ -77,6 +77,27 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('text').that.is.a('string')
             ]);
         });
+
+        it('should get an hour by hour summary type given a date of today', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            let p = weather(Date.now());
+
+            return Promise.all([
+                expect(p).to.eventually.have.keys('date', 'text', 'type'),
+                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour')
+            ]);
+        });
+
+        it('should get an hour by hour summary type given NO date', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            let p = weather();
+
+            return Promise.all([
+                expect(p).to.eventually.have.keys('date', 'text', 'type'),
+                expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
+                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour')
+            ]);
+        });
     });
 
 });
