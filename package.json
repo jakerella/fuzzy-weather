@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "mocha test/specs",
-    "devtest": "mocha --watch test/specs"
+    "watchtest": "mocha --watch test/specs",
+    "watchtestdebug": "DEBUG=fuzzy-weather mocha --watch test/specs"
   },
   "repository": {
     "type": "git",
