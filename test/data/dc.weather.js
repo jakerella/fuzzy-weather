@@ -2,6 +2,7 @@
 let now = Math.round(Date.now() / 1000);
 let oneDay = 60 * 60 * 24;
 
+
 module.exports = {
     "latitude":38.9649734,
     "longitude":-77.0207249,
@@ -338,7 +339,7 @@ module.exports = {
         ]
     },
     "hourly":{
-        "summary":"Drizzle tomorrow morning.",
+        "summary":"Rain in the morning.",
         "icon":"rain",
         "data":[
             {
@@ -1218,6 +1219,7 @@ module.exports = {
         "icon":"rain",
         "data":[
             {
+                // some rain, not all day
                 "time":now,
                 "summary":"Partly cloudy until evening.",
                 "icon":"partly-cloudy-day",
@@ -1247,36 +1249,8 @@ module.exports = {
                 "ozone":303.05
             },
             {
+                // heat / humidity
                 "time":now + (oneDay * 2),
-                "summary":"Drizzle in the morning.",
-                "icon":"rain",
-                "sunriseTime":1470737870,
-                "sunsetTime":1470787912,
-                "moonPhase":0.22,
-                "precipIntensity":0.0026,
-                "precipIntensityMax":0.0054,
-                "precipIntensityMaxTime":now + (oneDay * 2),
-                "precipProbability":0.21,
-                "precipType":"rain",
-                "temperatureMin":64.66,
-                "temperatureMinTime":1470729600,
-                "temperatureMax":84.69,
-                "temperatureMaxTime":1470772800,
-                "apparentTemperatureMin":64.66,
-                "apparentTemperatureMinTime":1470729600,
-                "apparentTemperatureMax":91.18,
-                "apparentTemperatureMaxTime":1470772800,
-                "dewPoint":68,
-                "humidity":0.78,
-                "windSpeed":4.94,
-                "windBearing":119,
-                "visibility":9.08,
-                "cloudCover":0.43,
-                "pressure":1020.9,
-                "ozone":294.86
-            },
-            {
-                "time":now + (oneDay * 3),
                 "summary":"Light rain starting in the afternoon.",
                 "icon":"rain",
                 "sunriseTime":1470824326,
@@ -1284,7 +1258,7 @@ module.exports = {
                 "moonPhase":0.25,
                 "precipIntensity":0.0037,
                 "precipIntensityMax":0.0158,
-                "precipIntensityMaxTime":now + (oneDay * 3),
+                "precipIntensityMaxTime":now + oneDay,
                 "precipProbability":0.47,
                 "precipType":"rain",
                 "temperatureMin":74.62,
@@ -1305,7 +1279,38 @@ module.exports = {
                 "ozone":286.23
             },
             {
-                "time":now + (oneDay * 4),
+                // rain
+                "time":now + oneDay,
+                "summary":"Rain in the morning.",
+                "icon":"rain",
+                "sunriseTime":1470737870,
+                "sunsetTime":1470787912,
+                "moonPhase":0.22,
+                "precipIntensity":0.0265,
+                "precipIntensityMax":0.0320,
+                "precipIntensityMaxTime":now + (oneDay * 2),
+                "precipProbability":0.31,
+                "precipType":"rain",
+                "temperatureMin":64.66,
+                "temperatureMinTime":1470729600,
+                "temperatureMax":84.69,
+                "temperatureMaxTime":1470772800,
+                "apparentTemperatureMin":64.66,
+                "apparentTemperatureMinTime":1470729600,
+                "apparentTemperatureMax":91.18,
+                "apparentTemperatureMaxTime":1470772800,
+                "dewPoint":68,
+                "humidity":0.78,
+                "windSpeed":4.94,
+                "windBearing":119,
+                "visibility":9.08,
+                "cloudCover":0.43,
+                "pressure":1020.9,
+                "ozone":294.86
+            },
+            {
+                // snow
+                "time":now + (oneDay * 3),
                 "summary":"Light rain throughout the day.",
                 "icon":"rain",
                 "sunriseTime":1470910781,
@@ -1334,7 +1339,8 @@ module.exports = {
                 "ozone":279.17
             },
             {
-                "time":now + (oneDay * 5),
+                // sleet
+                "time":now + (oneDay * 4),
                 "summary":"Rain starting in the afternoon.",
                 "icon":"rain",
                 "sunriseTime":1470997236,
@@ -1363,7 +1369,8 @@ module.exports = {
                 "ozone":273.65
             },
             {
-                "time":now + (oneDay * 6),
+                // cold  / wind
+                "time":now + (oneDay * 5),
                 "summary":"Light rain starting in the afternoon.",
                 "icon":"rain",
                 "sunriseTime":1471083692,
@@ -1391,7 +1398,8 @@ module.exports = {
                 "ozone":274.86
             },
             {
-                "time":now + (oneDay * 7),
+                // clouds
+                "time":now + (oneDay * 6),
                 "summary":"Rain starting in the afternoon.",
                 "icon":"rain",
                 "sunriseTime":1471170147,
@@ -1419,7 +1427,8 @@ module.exports = {
                 "ozone":275.76
             },
             {
-                "time":now + (oneDay * 8),
+                // wind
+                "time":now + (oneDay * 7),
                 "summary":"Light rain in the morning and afternoon.",
                 "icon":"rain",
                 "sunriseTime":1471256602,

@@ -100,4 +100,29 @@ describe('Weather core', function() {
         });
     });
 
+    describe('Full weather output', function() {
+
+        beforeEach(function() {
+            nock('https://api.darksky.net')
+                .get(`/forecast/${API_KEY}/${LAT},${LNG}`)
+                .reply(200, weatherData);
+        });
+
+        it('should have all the right data for "today"', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            return weather()
+                .then(function(data) {
+                    console.log(data);
+                });
+        });
+
+        it('should have all the right data for rain', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            return weather(Date.now() + (2* 86400000))
+                .then(function(data) {
+                    console.log(data);
+                });
+        });
+    });
+
 });

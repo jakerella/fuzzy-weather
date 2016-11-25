@@ -1,5 +1,7 @@
 'use strict';
 
+let debug = require('debug')('fuzzy-weather:rain');
+
 module.exports = getRainText;
 
 /**
@@ -9,7 +11,9 @@ module.exports = getRainText;
  * @return {String}           The text to use for rain information given the data provided
  */
 function getRainText(condition, data) {
-    if (data.probability < 0.1) {
+    debug('getting rain text if prob is up:', data.precipProbability);
+
+    if (data.precipProbability < 0.1) {
         return '';
     }
 
@@ -18,22 +22,20 @@ function getRainText(condition, data) {
     peak = (peak > 12) ? ((peak - 12) + ' pm') : (peak + 'am');
 
     // TODO:
-    // * use condition where appropriate
     // * base text on level
     // * create array of possible phrases
 
-    return 'You should expect ' + getPrecipIntensityText(data.precipIntensityMax, data.precipType) + '. ' +
-        'There is a ' + (data.precipProbability * 100) + ' percent chance ' +
-        ' peaking at around ' + peak + '.';
+    return `You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} \
+peaking at around ${peak}. There is a ${(data.precipProbability * 100)} percent chance overall.`;
 }
 
 getRainText.headline = function headline() {
     return [
-        'Don\'t forget your umbrella {day}!',
-        'Remember the umbrella {day}.',
-        'Prepare for some wet weather {day}.',
-        'It\'s going to be wet {day}.',
-        'You\'ll need the umbrella {day}.'
+        `Don't forget your umbrella {day}!`,
+        `Remember the umbrella {day}.`,
+        `Prepare for some wet weather {day}.`,
+        `It's going to be wet {day}.`,
+        `You'll need the umbrella {day}.`
     ].sample();
 };
 
@@ -48,13 +50,7 @@ function getPrecipIntensityText(intensity, type) {
     } else if (intensity > 0.01) {
         intensityText = 'light';
     } else if (intensity > 0) {
-        if (type === 'snow') {
-            intensityText = 'a light dusting of';
-        } else if (type === 'rain') {
-            intensityText = 'drizzling';
-        } else {
-            intensityText = 'very light';
-        }
+        intensityText = 'drizzling';
     }
     return intensityText + ' ' + type;
 }
