@@ -89,7 +89,19 @@ describe('Weather core', function() {
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'text', 'type'),
-                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour')
+                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour'),
+                expect(p).to.eventually.have.property('text').that.contains('today')
+            ]);
+        });
+
+        it('should get an hour by hour summary type given a date of tomorrow', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            let p = weather(Date.now() + 86400000);
+
+            return Promise.all([
+                expect(p).to.eventually.have.keys('date', 'text', 'type'),
+                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour'),
+                expect(p).to.eventually.have.property('text').that.contains('tomorrow')
             ]);
         });
 
@@ -100,12 +112,13 @@ describe('Weather core', function() {
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'text', 'type'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
-                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour')
+                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour'),
+                expect(p).to.eventually.have.property('text').that.contains('today')
             ]);
         });
     });
 
-    describe('Full weather output', function() {
+    xdescribe('Full weather output', function() {
 
         beforeEach(function() {
             nock('https://api.darksky.net')
