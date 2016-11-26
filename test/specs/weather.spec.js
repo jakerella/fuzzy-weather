@@ -4,7 +4,12 @@ let nock = require('nock'),
     chai = require('chai'),
     chaiPromise = require('chai-as-promised'),
     weatherInit = require('../../src/weather'),
-    weatherData = require('../data/dc.weather');
+    weatherData = require('../data/dc.weather')(null, {
+        maxTemp: 75,
+        minTemp: 55,
+        heatIndexPercent: 0.05,
+        conditions: [ { type: 'rain', length: 5, delay: 8 } ]
+    });
 
 chai.use(chaiPromise);
 chai.should();
@@ -124,5 +129,6 @@ describe('Weather core', function() {
                 });
         });
     });
+
 
 });
