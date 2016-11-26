@@ -121,9 +121,17 @@ describe('Weather core', function() {
                 });
         });
 
+        it('should have all the right data for "tomorrow"', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            return weather(Date.now() + 86400000)
+                .then(function(data) {
+                    console.log(data);
+                });
+        });
+
         it('should have all the right data for rain', function() {
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            return weather(Date.now() + (2* 86400000))
+            return weather(Date.now() + (2 * 86400000))
                 .then(function(data) {
                     console.log(data);
                 });

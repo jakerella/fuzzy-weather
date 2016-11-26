@@ -1,5 +1,7 @@
 'use strict';
 
+/* jshint maxdepth:5 */
+
 let _ = require('lodash'),
     debug = require('debug')('fuzzy-weather:testdata');
 

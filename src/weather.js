@@ -61,6 +61,7 @@ module.exports = function(options = {}) {
             }
 
             let now = new Date();
+            let todaySimple = getCYMD(now);
 
             // No date? no problem! Just get today's weather.
             if (!requestedDate) {
@@ -73,7 +74,7 @@ module.exports = function(options = {}) {
             }
             let simpleDate = getCYMD(reqDateObj);
 
-            if (simpleDate < getCYMD(now)) {
+            if (simpleDate < todaySimple) {
                 return reject(new Error(`Unable to get weather foreacast for date in the past (${simpleDate})`));
             } else if (reqDateObj.getTime() > (now.getTime() + (86400000 * 7))) {
                 return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`));
@@ -107,18 +108,37 @@ module.exports = function(options = {}) {
                 }
 
 
-                if (getCYMD(now) === simpleDate ||
-                    getCYMD(now.getTime() + 86400000) === simpleDate) {
+                let tomorrowSimple = getCYMD(now.getTime() + 86400000);
+                if (todaySimple === simpleDate || tomorrowSimple === simpleDate) {
                     // for today or tomorrow, use hour by hour (ish) summary
                     debug(`getting hour-by-hour summary for ${simpleDate}`);
 
-                    let dailyData = data.daily.data[0];
-                    if (getCYMD(dailyData.time * 1000) !== simpleDate) {
+                    let hourStart = 0;
+                    let hourEnd = 0;
+                    let dailyIndex = 0;
+
+                    if (todaySimple === simpleDate) {
+                        for (let i=0; i<24; ++i) {
+                            if (getCYMD(data.hourly.data[i].time * 1000) !== simpleDate) {
+                                hourEnd = i;
+                                break;
+                            }
+                        }
+                    } else {
                         // If it isn't today, it's tomorrow
-                        dailyData = data.daily.data[1];
+                        dailyIndex = 1;
+                        for (let i=0; i<49; ++i) {
+                            if (!hourStart && getCYMD(data.hourly.data[i].time * 1000) === simpleDate) {
+                                hourStart = i;
+                            } else if (hourStart && getCYMD(data.hourly.data[i].time * 1000) !== simpleDate) {
+                                hourEnd = i;
+                                break;
+                            }
+                        }
+                        hourEnd = hourEnd || 49;
                     }
 
-                    text = render(getHourByHour(o, data.hourly, dailyData), {
+                    text = render(getHourByHour(o, data.hourly.data.slice(hourStart, hourEnd), data.daily.data[dailyIndex]), {
                         day: getDayOfWeek(reqDateObj, true)
                     });
                     type = 'hour-by-hour';
@@ -400,12 +420,15 @@ function render(text, data) {
 
 function getCYMD(d) {
     if (typeof(d) === 'number') {
-        d = new Date (d);
+        d = new Date(d);
     }
     if (!d.getTime()) {
         return null;
     }
-    return d.toISOString().split('T')[0];
+
+    d.setHours(d.getHours()-(d.getTimezoneOffset() / 60));
+
+    return d.toJSON().split('T')[0];
 }
 
 function getDayOfWeek(date, useFamiliar) {
