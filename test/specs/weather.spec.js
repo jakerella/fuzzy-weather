@@ -18,6 +18,7 @@ let expect = chai.expect;
 const API_KEY = '1234567890';
 const LAT = 38.9649734;
 const LNG = -77.0207249;
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 describe('Weather core', function() {
 
@@ -75,17 +76,30 @@ describe('Weather core', function() {
             let reqDate = Date.now() + (2 * 86400000);
             let p = weather(reqDate);
 
+            let day = DAYS_OF_WEEK[(new Date(reqDate)).getDay()];
+
+            // p.then(function(data) {
+            //     console.log(data.text);
+            // });
+
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'text', 'type'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
                 expect(p).to.eventually.have.property('type').that.equals('day-summary'),
-                expect(p).to.eventually.have.property('text').that.is.a('string')
+                expect(p).to.eventually.have.property('text').that.is.a('string'),
+                expect(p).to.eventually.have.property('text').that.contains(day),
+                expect(p).to.eventually.have.property('text').that.contains('light rain'),
+                expect(p).to.eventually.have.property('text').that.contains('47 percent')
             ]);
         });
 
         it('should get an hour by hour summary type given a date of today', function() {
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
             let p = weather(Date.now());
+
+            // p.then(function(data) {
+            //     console.log(data.text);
+            // });
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'text', 'type'),
@@ -117,39 +131,5 @@ describe('Weather core', function() {
             ]);
         });
     });
-
-    xdescribe('Full weather output', function() {
-
-        beforeEach(function() {
-            nock('https://api.darksky.net')
-                .get(`/forecast/${API_KEY}/${LAT},${LNG}`)
-                .reply(200, weatherData);
-        });
-
-        it('should have all the right data for "today"', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            return weather()
-                .then(function(data) {
-                    console.log(data);
-                });
-        });
-
-        it('should have all the right data for "tomorrow"', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            return weather(Date.now() + 86400000)
-                .then(function(data) {
-                    console.log(data);
-                });
-        });
-
-        it('should have all the right data for rain', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            return weather(Date.now() + (2 * 86400000))
-                .then(function(data) {
-                    console.log(data);
-                });
-        });
-    });
-
 
 });
