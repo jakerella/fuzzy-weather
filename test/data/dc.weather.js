@@ -1,6 +1,7 @@
 'use strict';
 
-let _ = require('lodash');
+let _ = require('lodash'),
+    debug = require('debug')('fuzzy-weather:testdata');
 
 let now = Math.round(Date.now() / 1000);
 let oneDay = 60 * 60 * 24;
@@ -1538,32 +1539,39 @@ let baseData = {
  * @return {Object}            The generated weather data (as returned by Dark Sky)
  */
 module.exports = function generateWeather(location = {}, hourByHour = {}) {
-    return _.merge({}, baseData, location, { hourly: { data: generateHourByHour(hourByHour) } });
+    let conditionData = generateHourByHour(hourByHour);
+    let data = _.merge({}, baseData, location, { hourly: { stuff: 1, data: conditionData.hourly } });
+    _.merge(data.daily.data[0], conditionData.daily[0]);
+    _.merge(data.daily.data[1], conditionData.daily[1]);
+    return data;
 };
 
 /**
  * Generates the hour by hour data
- * @param  {Object} hourly The conditions for the next 48 hours of data:
-                            {
-                             maxTemp: Number,
-                             minTemp: Number,
-                             heatIndexPercent: Number,
-                             conditions: [ { type: String, length: Number, delay: Number } ]
-                            }
- * @return {Array}         The hourly data
+ * @param  {Object} conditions The conditions for the next 48 hours of data:
+                                {
+                                 maxTemp: Number,
+                                 minTemp: Number,
+                                 heatIndexPercent: Number,
+                                 conditions: [ { type: String, length: Number, delay: Number } ]
+                                }
+ * @return {Object}         The hourly and daily data changes: { hourly: Array, daily: Array }
  */
-function generateHourByHour(hourly = {}) {
-    let data = [];
+function generateHourByHour(conditions = {}) {
+    let hourly = [];
+    let daily = [];
     let hour = (new Date()).getHours();
     let dayPeakPercent = 1 - (Math.abs(hour - 14) / 14);
 
-    hourly.maxTemp = hourly.maxTemp || 75;
-    hourly.minTemp = hourly.minTemp || 55;
-    hourly.heatIndexPercent = hourly.heatIndexPercent || 0;
-    hourly.conditions = hourly.conditions || [];
+    conditions.maxTemp = conditions.maxTemp || 75;
+    conditions.minTemp = conditions.minTemp || 55;
+    conditions.heatIndexPercent = conditions.heatIndexPercent || 0;
+    conditions.conditions = conditions.conditions || [];
+
+    debug('hourly conditions to generate', conditions);
 
     for (let i=0; i<49; ++i) {
-        let currTemp = hourly.minTemp + ((hourly.maxTemp - hourly.minTemp) * dayPeakPercent);
+        let currTemp = conditions.minTemp + ((conditions.maxTemp - conditions.minTemp) * dayPeakPercent);
         // basic set
         let hour = {
             time: now + (i * 3600),
@@ -1573,7 +1581,7 @@ function generateHourByHour(hourly = {}) {
             precipProbability: 0.00,
             precipType: 'rain',
             temperature: currTemp,
-            apparentTemperature: currTemp + (currTemp * hourly.heatIndexPercent),
+            apparentTemperature: currTemp + (currTemp * conditions.heatIndexPercent),
             dewPoint: 65.00,
             humidity: 0.60,
             windSpeed: 0.00,
@@ -1584,22 +1592,42 @@ function generateHourByHour(hourly = {}) {
             ozone: 300.00
         };
 
-        for (let j=0; j<hourly.conditions.length; ++j) {
-            if (i >= hourly.conditions[j].delay && i <= (hourly.conditions[j].delay + hourly.conditions[j].length)) {
-                let percentComplete = (i - hourly.conditions[j].delay) / hourly.conditions[j].length;
+        for (let j=0; j<conditions.conditions.length; ++j) {
+            if (i >= conditions.conditions[j].delay && i <= (conditions.conditions[j].delay + conditions.conditions[j].length)) {
+                let percentComplete = (i - conditions.conditions[j].delay) / conditions.conditions[j].length;
 
-                if (hourly.conditions[j].type === 'rain') {
+                if (conditions.conditions[j].type === 'rain') {
+                    debug('adding rain condition at hour', i);
                     _.merge(hour, {
-                        summary: 'Light Rain',
+                        summary: 'Heavy Rain',
                         icon: 'rain',
                         precipIntensity: (0.5 - Math.abs(percentComplete - 0.5)) / 10,
                         precipProbability: 0.8 - Math.abs(percentComplete - 0.5),
                         precipType: 'rain'
                     });
+
+                    if (i < 24 && percentComplete > 0.45 && !daily[0]) {
+                        daily[0] = {
+                            precipIntensity: 0.02,
+                            precipIntensityMax: 0.045,
+                            precipIntensityMaxTime: now + (i * 3600),
+                            precipProbability: 0.4
+                        };
+                    } else if (i > 23 && percentComplete > 0.45 && !daily[1]) {
+                        daily[1] = {
+                            precipIntensity: 0.02,
+                            precipIntensityMax: 0.045,
+                            precipIntensityMaxTime: now + (i * 3600),
+                            precipProbability: 0.4
+                        };
+                    }
                 }
             }
         }
-        data.push(hour);
+        hourly.push(hour);
     }
-    return data;
+    return {
+        hourly,
+        daily
+    };
 }
