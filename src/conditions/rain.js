@@ -2,7 +2,10 @@
 
 let debug = require('debug')('fuzzy-weather:rain');
 
-module.exports = getRainText;
+module.exports = {
+    dailyText: getDailyText,
+    headline: getHeadline
+};
 
 /**
  * Get text for rainy day
@@ -10,7 +13,7 @@ module.exports = getRainText;
  * @param  {Object} data      The weather data from the API
  * @return {String}           The text to use for rain information given the data provided
  */
-function getRainText(condition, data) {
+function getDailyText(condition, data) {
     debug('getting rain text if prob is up:', data.precipProbability);
 
     if (data.precipProbability < 0.1) {
@@ -29,7 +32,7 @@ function getRainText(condition, data) {
 peaking at around ${peak}. There is a ${(data.precipProbability * 100)} percent chance overall.`;
 }
 
-getRainText.headline = function headline() {
+function getHeadline() {
     return [
         `Don't forget your umbrella {day}!`,
         `Remember the umbrella {day}.`,
@@ -37,7 +40,7 @@ getRainText.headline = function headline() {
         `It's going to be wet {day}.`,
         `You'll need the umbrella {day}.`
     ].sample();
-};
+}
 
 function getPrecipIntensityText(intensity, type) {
     let intensityText = 'no';

@@ -124,25 +124,25 @@ module.exports = function(options = {}) {
                             let day = getDayOfWeek(reqDateObj, true);
                             text = getDailyConditions(o, dailyData)
                                 .map(function(condition, i) {
-                                    let getCondition,
+                                    let conditionMod,
                                         text = [];
 
                                     debug('getting text for condition:', condition);
 
                                     try {
-                                        getCondition = require('./conditions/' + condition.topic);
+                                        conditionMod = require('./conditions/' + condition.topic);
                                     } catch(err) {
                                         debug('No condition module for %s', condition.topic);
                                     }
 
-                                    if (!getCondition) { return ''; }
+                                    if (!conditionMod) { return ''; }
 
                                     if (i === 0) {
-                                        text.push(render(getCondition.headline(), {
+                                        text.push(render(conditionMod.headline(), {
                                             day: day
                                         }));
                                     }
-                                    text.push(render(getCondition(condition, dailyData), {
+                                    text.push(render(conditionMod.dailyText(condition, dailyData), {
                                         day: day
                                     }));
                                     return text.join(' ');
