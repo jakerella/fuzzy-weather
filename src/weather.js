@@ -111,7 +111,16 @@ module.exports = function(options = {}) {
                     getCYMD(now.getTime() + 86400000) === simpleDate) {
                     // for today or tomorrow, use hour by hour (ish) summary
                     debug(`getting hour-by-hour summary for ${simpleDate}`);
-                    text = getHourByHour(reqDateObj, data);
+
+                    let dailyData = data.daily.data[0];
+                    if (getCYMD(dailyData.time * 1000) !== simpleDate) {
+                        // If it isn't today, it's tomorrow
+                        dailyData = data.daily.data[1];
+                    }
+
+                    text = render(getHourByHour(o, data.hourly, dailyData), {
+                        day: getDayOfWeek(reqDateObj, true)
+                    });
                     type = 'hour-by-hour';
 
                 } else {
@@ -184,8 +193,30 @@ data.hourly.data[0] - 48
 }
  */
 
-function getHourByHour() {
-    return 'Gonna have some weather today!';
+/**
+ * [getHourByHour description]
+ * @param  {Object} o      The options for this instance of fuzzy weather
+ * @param  {Object} hourly The hourly data returned from the Dark Sky API
+ * @param  {Object} daily  Daily summary data as returned from Dark Sky API
+ * @return {String}        The text of the forecast for the current day
+ */
+function getHourByHour(o, hourly, daily) {
+    let conditionMod;
+    let text = [];
+    let dayHeadliner = getDailyConditions(o, daily)[0];
+
+    try {
+        conditionMod = require('./conditions/' + dayHeadliner.topic);
+    } catch(err) {
+        debug('No condition module for %s', dayHeadliner.topic);
+    }
+
+    if (conditionMod) {
+        text.push(conditionMod.headline());
+    }
+
+
+    return text.join(' ');
 }
 
 
