@@ -419,21 +419,25 @@ function render(text, data) {
 }
 
 function getCYMD(d) {
-    if (typeof(d) === 'number') {
-        d = new Date(d);
+    let dCopy;
+    if (d instanceof Date) {
+        dCopy = new Date(d.getTime());
+    } else {
+        dCopy = new Date(d);
     }
-    if (!d.getTime()) {
+    if (!dCopy.getTime()) {
         return null;
     }
 
-    d.setHours(d.getHours()-(d.getTimezoneOffset() / 60));
+    dCopy.setHours(dCopy.getHours()-(dCopy.getTimezoneOffset() / 60));
 
-    return d.toJSON().split('T')[0];
+    return dCopy.toJSON().split('T')[0];
 }
 
 function getDayOfWeek(date, useFamiliar) {
     let now = Date.now();
     let day = 'that day';
+
     if (useFamiliar && getCYMD(date) === getCYMD(now)) {
         day = 'today';
     } else if (useFamiliar && getCYMD(date) === getCYMD(now + (1000*60*60*24))) {
