@@ -83,13 +83,13 @@ describe('Weather core', function() {
             // });
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'text', 'type'),
+                expect(p).to.eventually.have.keys('date', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
-                expect(p).to.eventually.have.property('type').that.equals('day-summary'),
-                expect(p).to.eventually.have.property('text').that.is.a('string'),
-                expect(p).to.eventually.have.property('text').that.contains(day),
-                expect(p).to.eventually.have.property('text').that.contains('light rain'),
-                expect(p).to.eventually.have.property('text').that.contains('47 percent')
+                expect(p).to.eventually.have.property('hourByHour').that.is.null,
+                expect(p).to.eventually.have.property('dailySummary').that.is.a('string'),
+                expect(p).to.eventually.have.property('dailySummary').that.contains(day),
+                expect(p).to.eventually.have.property('dailySummary').that.contains('light rain'),
+                expect(p).to.eventually.have.property('dailySummary').that.contains('47 percent')
             ]);
         });
 
@@ -102,9 +102,10 @@ describe('Weather core', function() {
             // });
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'text', 'type'),
-                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour'),
-                expect(p).to.eventually.have.property('text').that.contains('today')
+                expect(p).to.eventually.have.keys('date', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.property('hourByHour').that.is.a('string'),
+                expect(p).to.eventually.have.property('hourByHour').that.contains('today'),
+                expect(p).to.eventually.have.property('dailySummary').that.is.a('string')
             ]);
         });
 
@@ -113,9 +114,10 @@ describe('Weather core', function() {
             let p = weather(Date.now() + 86400000);
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'text', 'type'),
-                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour'),
-                expect(p).to.eventually.have.property('text').that.contains('tomorrow')
+                expect(p).to.eventually.have.keys('date', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.property('hourByHour').that.is.a('string'),
+                expect(p).to.eventually.have.property('hourByHour').that.contains('tomorrow'),
+                expect(p).to.eventually.have.property('dailySummary').that.is.a('string')
             ]);
         });
 
@@ -124,10 +126,11 @@ describe('Weather core', function() {
             let p = weather();
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'text', 'type'),
+                expect(p).to.eventually.have.keys('date', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
-                expect(p).to.eventually.have.property('type').that.equals('hour-by-hour'),
-                expect(p).to.eventually.have.property('text').that.contains('today')
+                expect(p).to.eventually.have.property('hourByHour').that.is.a('string'),
+                expect(p).to.eventually.have.property('hourByHour').that.contains('today'),
+                expect(p).to.eventually.have.property('dailySummary').that.is.a('string')
             ]);
         });
     });
