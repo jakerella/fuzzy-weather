@@ -124,7 +124,11 @@ module.exports = function(options = {}) {
  */
 function getDailySummary(o, data, reqDate) {
     let simpleDate = getCYMD(reqDate);
-    let text = '';
+    let info = {
+        data: null,
+        conditions: {},
+        forecaste: null
+    };
 
     debug(`getting daily summary for ${simpleDate}`);
 
@@ -132,9 +136,12 @@ function getDailySummary(o, data, reqDate) {
         if (getCYMD(dailyData.time * 1000) === simpleDate) {
             dailyData.type = 'daily';
             let day = getDayOfWeek(reqDate, true);
-            text = getDailyConditions(o, dailyData)
+
+            info.data = dailyData;
+            info.forecast = getDailyConditions(o, dailyData)
                 .map(function(condition, i) {
                     let conditionMod,
+                        condText,
                         text = [];
 
                     debug('getting text for condition:', condition);
@@ -152,7 +159,9 @@ function getDailySummary(o, data, reqDate) {
                             day: day
                         }));
                     }
-                    text.push(render(conditionMod.dailyText(condition, dailyData), {
+                    condText = conditionMod.dailyText(condition, dailyData);
+                    info.conditions[condition.topic] = condText;
+                    text.push(render(condText, {
                         day: day
                     }));
                     return text.join(' ');
@@ -161,7 +170,7 @@ function getDailySummary(o, data, reqDate) {
         }
     });
 
-    return text;
+    return info;
 }
 
 
@@ -174,9 +183,15 @@ function getDailySummary(o, data, reqDate) {
  * @return {String}        The hour-by-hour text of the forecast
  */
 function getHourByHour(o, data, reqDate) {
+    let info = {
+        data: null,
+        conditions: {},
+        forecast: null
+    };
 
     let refinedData = getHourByHourData(data, reqDate);
     if (!refinedData) { return null; }
+    info.data = refinedData.hourly;
 
     let simpleDate = getCYMD(reqDate);
     debug(`getting hour-by-hour summary for ${simpleDate}`);
@@ -195,9 +210,11 @@ function getHourByHour(o, data, reqDate) {
         text.push(conditionMod.headline());
     }
 
-    return render(text.join(' '), {
+    info.forecast = render(text.join(' '), {
         day: getDayOfWeek(reqDate, true)
     });
+
+    return info;
 }
 
 
