@@ -1,6 +1,7 @@
 'use strict';
 
 let debug = require('debug')('fuzzy-weather:rain');
+require('../array-util');
 
 module.exports = {
     dailyText: getDailyText,
