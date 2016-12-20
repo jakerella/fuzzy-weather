@@ -3,24 +3,28 @@
 let chai = require('chai'),
     rain = require('../../src/conditions/rain');
 
-let now = Math.round(Date.now() / 1000),
-    rainData = {
+let now = new Date();
+now.setHours(12);
+now.setMinutes(0);
+let time = Math.round(now.getTime() / 1000);
+
+let rainCondition = {
         topic: 'rain',
         probability: 0.5,
         level: 8
     },
-    daily = {
+    dailyData = {
         // some rain, not all day
-        'time':now,
+        'time':time,
         'summary':'Partly cloudy until evening.',
         'icon':'partly-cloudy-day',
         'sunriseTime':1470651415,
         'sunsetTime':1470701583,
         'moonPhase':0.19,
         'precipIntensity':0.0003,
-        'precipIntensityMax':0.0029,
-        'precipIntensityMaxTime':now + (60 * 60 * 2),
-        'precipProbability':0.09,
+        'precipIntensityMax':0.0859,
+        'precipIntensityMaxTime':time + (60 * 60 * 2),
+        'precipProbability':0.50,
         'precipType':'rain',
         'temperatureMin':68.17,
         'temperatureMinTime':1470650400,
@@ -53,6 +57,23 @@ describe('rain module', function() {
             expect(result).to.be.a('string');
             expect(result).to.contain('{day}');
         });
+    });
+
+    describe('rain daily text', function() {
+
+        it('should return empty string for low probability', function() {
+            let result = rain.dailyText({}, { precipProbability: 0.05 });
+            expect(result).to.be.a('string').and.have.property('length').that.equals(0);
+        });
+
+        it('should return correct text for rain', function() {
+            let result = rain.dailyText(rainCondition, dailyData);
+            expect(result).to.be.a('string');
+            expect(result).to.contain('50 percent');
+            expect(result).to.contain('moderate');
+            expect(result).to.contain('7 pm'); // due to weirdness with TZ offset
+        });
+
     });
 
 

@@ -23,7 +23,7 @@ function getDailyText(condition, data) {
 
     let peak = new Date(data.precipIntensityMaxTime * 1000);
     peak = peak.getHours() + (peak.getTimezoneOffset() / 60);
-    peak = (peak > 12) ? ((peak - 12) + ' pm') : (peak + 'am');
+    peak = (peak > 12) ? ((peak - 12) + ' pm') : (peak + ' am');
 
     // TODO:
     // * base text on level
