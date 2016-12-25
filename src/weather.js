@@ -2,10 +2,10 @@
 
 let debug = require('debug')('fuzzy-weather'),
     _ = require('lodash'),
-    request = require('request');
+    request = require('request'),
+    moment = require('moment');
 require('./array-util');
 
-const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const OPTIONS = {
     apiKey: null,
     location: { lat: null, lng: null },
@@ -61,7 +61,7 @@ module.exports = function(options = {}) {
             }
 
             let now = new Date();
-            let todaySimple = getCYMD(now);
+            let todaySimple = moment(now).format('YYYY-MM-DD');
 
             // No date? no problem! Just get today's weather.
             if (!requestedDate) {
@@ -73,7 +73,7 @@ module.exports = function(options = {}) {
                 return reject(new Error('Please provide a valid date to check the weather for!'));
             }
             reqDateObj.setHours(0);
-            let simpleDate = getCYMD(reqDateObj);
+            let simpleDate = moment(reqDateObj).format('YYYY-MM-DD');
 
             if (simpleDate < todaySimple) {
                 return reject(new Error(`Unable to get weather foreacast for date in the past (${simpleDate})`));
@@ -125,7 +125,7 @@ module.exports = function(options = {}) {
 * @return {String}        The daily summary text of the forecast
  */
 function getDailySummary(o, data, reqDate) {
-    let simpleDate = getCYMD(reqDate);
+    let simpleDate = moment(reqDate).format('YYYY-MM-DD');
     let info = {
         data: null,
         conditions: {},
@@ -135,7 +135,7 @@ function getDailySummary(o, data, reqDate) {
     debug(`getting daily summary for ${simpleDate}`);
 
     data.daily.data.forEach(function(dailyData) {
-        if (getCYMD(dailyData.time * 1000) === simpleDate) {
+        if (moment(dailyData.time * 1000).format('YYYY-MM-DD') === simpleDate) {
             dailyData.type = 'daily';
             let day = getDayOfWeek(reqDate, true);
 
@@ -195,7 +195,7 @@ function getHourByHour(o, data, reqDate) {
     if (!refinedData) { return null; }
     info.data = refinedData.hourly;
 
-    let simpleDate = getCYMD(reqDate);
+    let simpleDate = moment(reqDate).format('YYYY-MM-DD');
     debug(`getting hour-by-hour summary for ${simpleDate}`);
 
     let conditionMod;
@@ -223,9 +223,9 @@ function getHourByHour(o, data, reqDate) {
 function getHourByHourData(data, reqDate) {
     let refinedData = null;
     let now = new Date();
-    let simpleDate = getCYMD(reqDate);
-    let todaySimple = getCYMD(now);
-    let tomorrowSimple = getCYMD(now.getTime() + 86400000);
+    let simpleDate = moment(reqDate).format('YYYY-MM-DD');
+    let todaySimple = moment(now).format('YYYY-MM-DD');
+    let tomorrowSimple = moment(now).add(1, 'd').format('YYYY-MM-DD');
 
     if (todaySimple === simpleDate || tomorrowSimple === simpleDate) {
         let hourStart = 0;
@@ -235,7 +235,7 @@ function getHourByHourData(data, reqDate) {
         // determine what data applies to the requested day
         if (todaySimple === simpleDate) {
             for (let i=0; i<24; ++i) {
-                if (getCYMD(data.hourly.data[i].time * 1000) !== simpleDate) {
+                if (moment(data.hourly.data[i].time * 1000).format('YYYY-MM-DD') !== simpleDate) {
                     hourEnd = i;
                     break;
                 }
@@ -244,9 +244,9 @@ function getHourByHourData(data, reqDate) {
             // If it isn't today, it's tomorrow
             dailyIndex = 1;
             for (let i=0; i<49; ++i) {
-                if (!hourStart && getCYMD(data.hourly.data[i].time * 1000) === simpleDate) {
+                if (!hourStart && moment(data.hourly.data[i].time * 1000).format('YYYY-MM-DD') === simpleDate) {
                     hourStart = i;
-                } else if (hourStart && getCYMD(data.hourly.data[i].time * 1000) !== simpleDate) {
+                } else if (hourStart && moment(data.hourly.data[i].time * 1000).format('YYYY-MM-DD') !== simpleDate) {
                     hourEnd = i;
                     break;
                 }
@@ -441,33 +441,16 @@ function render(text, data) {
     return newText;
 }
 
-function getCYMD(d) {
-    let dCopy;
-    if (d instanceof Date) {
-        dCopy = new Date(d.getTime());
-    } else {
-        dCopy = new Date(d);
-    }
-    if (!dCopy.getTime()) {
-        return null;
-    }
-
-    dCopy.setHours(dCopy.getHours()-(dCopy.getTimezoneOffset() / 60));
-
-    return dCopy.toJSON().split('T')[0];
-}
-
 function getDayOfWeek(date, useFamiliar) {
     let now = Date.now();
     let day = 'that day';
 
-    if (useFamiliar && getCYMD(date) === getCYMD(now)) {
+    if (useFamiliar && moment(date).format('YYYY-MM-DD') === moment(now).format('YYYY-MM-DD')) {
         day = 'today';
-    } else if (useFamiliar && getCYMD(date) === getCYMD(now + (1000*60*60*24))) {
+    } else if (useFamiliar && moment(date).format('YYYY-MM-DD') === moment(now + (1000*60*60*24)).format('YYYY-MM-DD')) {
         day = 'tomorrow';
-    } else if ( (date.getTime() - now) < (1000*60*60*24*7) ) {
-        // only use day of the week if within the next week
-        day = DAYS_OF_WEEK[date.getDay()];
+    } else {
+        day = moment(date).format('dddd');
     }
     return day;
 }
