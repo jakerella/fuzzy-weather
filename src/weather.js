@@ -72,6 +72,7 @@ module.exports = function(options = {}) {
             if (!reqDateObj.getTime()) {
                 return reject(new Error('Please provide a valid date to check the weather for!'));
             }
+            reqDateObj.setHours(0);
             let simpleDate = getCYMD(reqDateObj);
 
             if (simpleDate < todaySimple) {
@@ -80,8 +81,9 @@ module.exports = function(options = {}) {
                 return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`));
             }
 
+            let midnight = Math.round(reqDateObj.getTime() / 1000);
             request({
-                url: `https://api.darksky.net/forecast/${o.apiKey}/${o.location.lat},${o.location.lng}`
+                url: `https://api.darksky.net/forecast/${o.apiKey}/${o.location.lat},${o.location.lng},${midnight}`
             }, function(err, res, body) {
                 if (err) {
                     debug('Error from API call', err);

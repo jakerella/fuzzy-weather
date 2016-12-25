@@ -66,9 +66,9 @@ describe('Weather core', function() {
 
     describe('getting weather data', function() {
         beforeEach(function() {
-            nock('https://api.darksky.net')
-                .get(`/forecast/${API_KEY}/${LAT},${LNG}`)
-                .reply(200, weatherData);
+                nock('https://api.darksky.net')
+                    .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG},\\d+`))
+                    .reply(200, weatherData);
         });
 
         it('should resolve with correct data properties given valid options', function() {
