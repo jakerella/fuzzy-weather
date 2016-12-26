@@ -1,12 +1,27 @@
 'use strict';
 
-let debug = require('debug')('fuzzy-weather:rain');
+let debug = require('debug')('fuzzy-weather:rain'),
+    moment = require('moment-timezone'),
+    lsq = require('least-squares');
 require('../array-util');
 
 module.exports = {
+    headline: getHeadline,
     dailyText: getDailyText,
-    headline: getHeadline
+    hourlyText: getHourlyText
 };
+
+
+function getHeadline() {
+    return [
+        `Don't forget your umbrella {day}!`,
+        `Remember the umbrella {day}.`,
+        `Prepare for some wet weather {day}.`,
+        `It's going to be wet {day}.`,
+        `You'll need the umbrella {day}.`
+    ].sample();
+}
+
 
 /**
  * Get text for rainy day
@@ -33,15 +48,107 @@ function getDailyText(condition, data) {
 peaking at around ${peak}. There is a ${(data.precipProbability * 100)} percent chance overall.`;
 }
 
-function getHeadline() {
-    return [
-        `Don't forget your umbrella {day}!`,
-        `Remember the umbrella {day}.`,
-        `Prepare for some wet weather {day}.`,
-        `It's going to be wet {day}.`,
-        `You'll need the umbrella {day}.`
-    ].sample();
+
+function getHourlyText(data, timezone) {
+    let text = [];
+    let strongInstances = [];
+    let holdInstance = null;
+
+    let xValues = [];
+    let yValues = [];
+
+    data.forEach(function determineInstances(hourData) {
+        let hour = moment.tz(hourData.time * 1000, 'GMT').tz(timezone);
+
+        // Track X and Y values to do linear regression later...
+        if (hourData.precipProbability > 0.05) {
+            xValues.push(hour.hours());
+            yValues.push(hourData.precipProbability);
+        }
+
+        if (hourData.precipType !== 'rain') { return; }
+
+        // Track any "strong" instances through the day...
+        if (hourData.precipProbability > 0.33 && hourData.precipIntensity > 0.03) {
+            // there's some rain this hour...
+            if (holdInstance === null) {
+                // we need a new rain instance
+                holdInstance = {
+                    startTime: hourData.time,
+                    startHour: hour.format('ha'),
+                    length: 1,
+                    maxPrecipProbability: hourData.precipProbability,
+                    maxPrecipProbabilityTime: hourData.time,
+                    maxPrecipProbabilityHour: hour.format('ha'),
+                    maxIntensity: hourData.precipIntensity,
+                    maxIntensityTime: hourData.time,
+                    maxIntensityHour: hour.format('ha')
+                };
+            } else {
+                // add to existing instance
+                holdInstance.length++;
+                if (hourData.precipIntensity >= holdInstance.maxIntensity) {
+                    holdInstance.maxIntensity = hourData.precipIntensity;
+                    holdInstance.maxIntensityTime = hourData.time;
+                    holdInstance.maxIntensityHour = hour.format('ha');
+                }
+                if (hourData.precipProbability >= holdInstance.maxPrecipProbability) {
+                    holdInstance.maxPrecipProbability = hourData.precipProbability;
+                    holdInstance.maxPrecipProbabilityTime = hourData.time;
+                    holdInstance.maxPrecipProbabilityHour = hour.format('ha');
+                }
+            }
+        } else if (holdInstance) {
+            // No rain this hour, but we have a previous rain instance!
+            strongInstances.push(holdInstance);
+            holdInstance = null;
+        }
+    });
+
+    if (holdInstance) {
+        // leftover strong instance at the end of the day?
+        strongInstances.push(holdInstance);
+        holdInstance = null;
+    }
+
+    if (xValues.length) {
+        // Use linear regression (least squares) to determine if rain
+        // chances increase or decrease through the day. Check the fit of the
+        // line to ensure correlation is strong enough in either direction
+        let regrData = {};
+        let regr = lsq(xValues, yValues, true, regrData);
+        debug(regr(0), regr(23), regrData);
+        if (regrData.bErr < 0.05 && regrData.mErr < 0.005) {
+            if (regr(0) < regr(23) && (regr(23) - regr(0)) > 0.8) {
+                text.push('There is an increasing rain chance through {day}.');
+            } else if (regr(0) > regr(23) && (regr(0) - regr(23)) > 0.8) {
+                text.push('Rain chances decrease through {day}.');
+            }
+        }
+    }
+
+    if (strongInstances.length) {
+        debug('strong rain instances', strongInstances);
+        // Make this go through multiple strong instances
+        let start = moment.tz(strongInstances[0].startTime * 1000, 'GMT').tz(timezone);
+        let description =
+            `Chances are good for rain starting about ${strongInstances[0].startHour} and
+            lasting until at least ${start.add(strongInstances[0].length, 'h').format('ha')}. There's a
+            ${Math.round(strongInstances[0].maxPrecipProbability * 100)} percent chance at
+            about ${strongInstances[0].maxPrecipProbabilityHour}`
+        ;
+        if (strongInstances[0].maxIntensityHour === strongInstances[0].maxPrecipProbabilityHour) {
+            description += ` which is also when it will be the heaviest.`;
+        } else {
+             description += `, but the heaviest rain will be around ${strongInstances[0].maxIntensityHour}.`;
+        }
+        text.push(description);
+    }
+
+    debug(text.join(' ').replace(/\s{2,}/g, ' '));
+    return text.join(' ').replace(/\s{2,}/g, ' ');
 }
+
 
 function getPrecipIntensityText(intensity, type) {
     let intensityText = 'no';

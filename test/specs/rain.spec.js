@@ -1,11 +1,10 @@
 'use strict';
 
 let chai = require('chai'),
-    rain = require('../../src/conditions/rain');
+    rain = require('../../src/conditions/rain'),
+    weatherDataGenerate = require('../data/dc.weather');
 
 let now = new Date();
-now.setHours(12);
-now.setMinutes(0);
 let time = Math.round(now.getTime() / 1000);
 
 let rainCondition = {
@@ -14,39 +13,17 @@ let rainCondition = {
         level: 8
     },
     dailyData = {
-        // some rain, not all day
         'time':time,
         'summary':'Partly cloudy until evening.',
-        'icon':'partly-cloudy-day',
-        'sunriseTime':1470651415,
-        'sunsetTime':1470701583,
-        'moonPhase':0.19,
         'precipIntensity':0.0003,
         'precipIntensityMax':0.0859,
         'precipIntensityMaxTime':time + (60 * 60 * 2),
         'precipProbability':0.50,
-        'precipType':'rain',
-        'temperatureMin':68.17,
-        'temperatureMinTime':1470650400,
-        'temperatureMax':86.49,
-        'temperatureMaxTime':1470679200,
-        'apparentTemperatureMin':68.17,
-        'apparentTemperatureMinTime':1470650400,
-        'apparentTemperatureMax':89.4,
-        'apparentTemperatureMaxTime':1470679200,
-        'dewPoint':65.82,
-        'humidity':0.72,
-        'windSpeed':1.79,
-        'windBearing':205,
-        'visibility':9.88,
-        'cloudCover':0.32,
-        'pressure':1017.02,
-        'ozone':303.05
+        'precipType':'rain'
     };
 
 chai.should();
 let expect = chai.expect;
-
 
 describe('rain module', function() {
 
@@ -71,7 +48,55 @@ describe('rain module', function() {
             expect(result).to.be.a('string');
             expect(result).to.contain('50 percent');
             expect(result).to.contain('moderate');
-            expect(result).to.contain('7 pm'); // due to weirdness with TZ offset
+        });
+
+    });
+
+    describe('rain hourly text', function() {
+
+        it('should be able to get hourly rain data with one rain event (increasing)', function() {
+            let data = weatherDataGenerate(null, {
+                maxTemp: 75,
+                minTemp: 55,
+                heatIndexPercent: 0.05,
+                conditions: [
+                    { type: 'rain', delay: 7, length: 13, form: 'increasing' }
+                ]
+            }, '2025-01-01T00:30:00');
+            let rainHourly = data.hourly.data.slice(0,24);
+
+            let result = rain.hourlyText(rainHourly, data.timezone);
+            expect(result).to.be.a('string').and.contain('rain').and.contain('increasing');
+        });
+
+        it('should be able to get hourly rain data with one rain event (decreasing)', function() {
+            let data = weatherDataGenerate(null, {
+                maxTemp: 75,
+                minTemp: 55,
+                heatIndexPercent: 0.05,
+                conditions: [
+                    { type: 'rain', delay: 7, length: 13, form: 'decreasing' }
+                ]
+            }, '2025-01-01T00:30:00');
+            let rainHourly = data.hourly.data.slice(0,24);
+
+            let result = rain.hourlyText(rainHourly, data.timezone);
+            expect(result).to.be.a('string').and.contain('rain').and.contain('decrease');
+        });
+
+        it('should be able to get hourly rain data with one rain event (bell)', function() {
+            let data = weatherDataGenerate(null, {
+                maxTemp: 75,
+                minTemp: 55,
+                heatIndexPercent: 0.05,
+                conditions: [
+                    { type: 'rain', delay: 7, length: 13, form: 'bell' }
+                ]
+            }, '2025-01-01T00:30:00');
+            let rainHourly = data.hourly.data.slice(0,24);
+
+            let result = rain.hourlyText(rainHourly, data.timezone);
+            expect(result).to.be.a('string').and.contain('rain');
         });
 
     });
