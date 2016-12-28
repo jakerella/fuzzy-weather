@@ -99,6 +99,37 @@ describe('rain module', function() {
             expect(result).to.be.a('string').and.contain('rain');
         });
 
+        it('should be able to get hourly rain data with one rain event (even)', function() {
+            let data = weatherDataGenerate(null, {
+                maxTemp: 75,
+                minTemp: 55,
+                heatIndexPercent: 0.05,
+                conditions: [
+                    { type: 'rain', delay: 7, length: 13, form: 'even' }
+                ]
+            }, '2025-01-01T00:30:00');
+            let rainHourly = data.hourly.data.slice(0,24);
+
+            let result = rain.hourlyText(rainHourly, data.timezone);
+            expect(result).to.be.a('string').and.contain('steady');
+        });
+
+        it('should be able to get hourly rain data with two rain events (bell, decreasing)', function() {
+            let data = weatherDataGenerate(null, {
+                maxTemp: 75,
+                minTemp: 55,
+                heatIndexPercent: 0.05,
+                conditions: [
+                    { type: 'rain', delay: 7, length: 6, form: 'bell' },
+                    { type: 'rain', delay: 18, length: 23, form: 'decreasing' }
+                ]
+            }, '2025-01-01T00:30:00');
+            let rainHourly = data.hourly.data.slice(0,24);
+
+            let result = rain.hourlyText(rainHourly, data.timezone);
+            expect(result).to.be.a('string').and.contain('rain');
+        });
+
     });
 
 

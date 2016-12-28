@@ -1,6 +1,7 @@
 'use strict';
 
 let debug = require('debug')('fuzzy-weather:rain'),
+    debugOut = require('debug')('fuzzy-weather:rain:output'),
     moment = require('moment-timezone'),
     lsq = require('least-squares');
 require('../array-util');
@@ -44,8 +45,11 @@ function getDailyText(condition, data) {
     // * base text on level
     // * create array of possible phrases
 
-    return `You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} \
-peaking at around ${peak}. There is a ${(data.precipProbability * 100)} percent chance overall.`;
+    let output =
+        `You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} peaking at around ${peak}.
+        There is a ${Math.round(data.precipProbability * 100)} percent chance overall.`;
+    debugOut(output);
+    return output;
 }
 
 
@@ -76,6 +80,7 @@ function getHourlyText(data, timezone) {
                 holdInstance = {
                     startTime: hourData.time,
                     startHour: hour.format('ha'),
+                    startPercent: hourData.precipProbability,
                     length: 1,
                     maxPrecipProbability: hourData.precipProbability,
                     maxPrecipProbabilityTime: hourData.time,
@@ -123,29 +128,61 @@ function getHourlyText(data, timezone) {
                 text.push('There is an increasing rain chance through {day}.');
             } else if (regr(0) > regr(23) && (regr(0) - regr(23)) > 0.8) {
                 text.push('Rain chances decrease through {day}.');
+            } else if (Math.abs(regr(0) - regr(23)) < 0.3) {
+                let hours = moment.tz(data[0].time * 1000, 'GMT').tz(timezone);
+                hours.add(xValues[0], 'h');
+                let evenText = `Chances for rain are pretty steady from about ${hours.format('ha')} through`;
+                hours.add(xValues.length, 'h');
+                evenText += ` ${hours.format('ha')}.`;
+                text.push(evenText);
             }
         }
     }
 
     if (strongInstances.length) {
         debug('strong rain instances', strongInstances);
-        // Make this go through multiple strong instances
-        let start = moment.tz(strongInstances[0].startTime * 1000, 'GMT').tz(timezone);
-        let description =
-            `Chances are good for rain starting about ${strongInstances[0].startHour} and
-            lasting until at least ${start.add(strongInstances[0].length, 'h').format('ha')}. There's a
-            ${Math.round(strongInstances[0].maxPrecipProbability * 100)} percent chance at
-            about ${strongInstances[0].maxPrecipProbabilityHour}`
-        ;
-        if (strongInstances[0].maxIntensityHour === strongInstances[0].maxPrecipProbabilityHour) {
-            description += ` which is also when it will be the heaviest.`;
-        } else {
-             description += `, but the heaviest rain will be around ${strongInstances[0].maxIntensityHour}.`;
+
+        if (strongInstances.length > 1) {
+            text.push(`It looks like there will be multiple rain chances {day}.`);
         }
-        text.push(description);
+
+        let holdMaxIntensity = null;
+        strongInstances.forEach(function addInstance(instance, i) {
+            let description;
+
+            // ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)}
+
+            if (i > 0) {
+                description =
+                    `There's another chance beginning about ${instance.startHour}
+                    peaking at ${instance.maxPrecipProbabilityHour} with a
+                    ${Math.round(instance.maxPrecipProbability * 100)} percent chance.`;
+            } else {
+                description =
+                    `Chances are good for rain starting about ${instance.startHour} with a
+                    ${Math.round(instance.startPercent * 100)} percent chance`;
+                if (instance.startHour === instance.maxPrecipProbabilityHour ||
+                    instance.startPercent === instance.maxPrecipProbability) {
+                    description += '.';
+                } else {
+                    description +=
+                        ` rising to
+                        ${Math.round(instance.maxPrecipProbability * 100)} percent at
+                        ${instance.maxPrecipProbabilityHour}.`;
+                }
+            }
+            if (!holdMaxIntensity || instance.maxIntensity > holdMaxIntensity.value) {
+                holdMaxIntensity = {
+                    value: instance.maxIntensity,
+                    hour: instance.maxIntensityHour
+                };
+            }
+            text.push(description);
+        });
+        text.push(`The heaviest bit should be around ${holdMaxIntensity.hour}.`);
     }
 
-    debug(text.join(' ').replace(/\s{2,}/g, ' '));
+    debugOut(text.join(' ').replace(/\s{2,}/g, ' '));
     return text.join(' ').replace(/\s{2,}/g, ' ');
 }
 
