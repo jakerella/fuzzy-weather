@@ -1618,6 +1618,15 @@ function getBaseData(now = 0) {
                 }
             ]
         },
+        // 'alerts': [
+        //     {
+        //         'title': 'Red Flag Warning for Oklahoma, OK',
+        //         'time': now - (60 * 60),  // start time of the alert
+        //         'expires': now + (60 * 60 * 4),
+        //         'description': '... EXCESSIVELY LONG DESCRIPTION ...',
+        //         'uri': 'https://alerts.weather.gov/cap/wwacapget.php?x=[ALERT_ID]'
+        //     }
+        // ],
         'flags': {
             'sources':[
                 'darksky',

@@ -1,6 +1,9 @@
 'use strict';
 
 let debug = require('debug')('fuzzy-weather'),
+    debugCurrently = require('debug')('fuzzy-weather:currently'),
+    debugHourly = require('debug')('fuzzy-weather:hourly'),
+    debugDaily = require('debug')('fuzzy-weather:daily'),
     _ = require('lodash'),
     request = require('request'),
     moment = require('moment');
@@ -107,6 +110,7 @@ module.exports = function(options = {}) {
                 }
 
                 resolve({
+                    currently: getCurrentConditions(o, data, reqDateObj),
                     dailySummary: getDailySummary(o, data, reqDateObj),
                     hourByHour: getHourByHour(o, data, reqDateObj),
                     date: reqDateObj
@@ -122,17 +126,17 @@ module.exports = function(options = {}) {
 * @param  {Object} o      The options for this instance of fuzzy weather
 * @param  {Object} data   The data returned from the Dark Sky API
 * @param  {Date} reqDate  The date of the request
-* @return {String}        The daily summary text of the forecast
+* @return {Object}        The daily summary text of the forecast { data, conditions, forecast }
  */
 function getDailySummary(o, data, reqDate) {
     let simpleDate = moment(reqDate).format('YYYY-MM-DD');
     let info = {
         data: null,
         conditions: {},
-        forecaste: null
+        forecast: null
     };
 
-    debug(`getting daily summary for ${simpleDate}`);
+    debugDaily(`getting daily summary for ${simpleDate}`);
 
     data.daily.data.forEach(function(dailyData) {
         if (moment(dailyData.time * 1000).format('YYYY-MM-DD') === simpleDate) {
@@ -146,12 +150,12 @@ function getDailySummary(o, data, reqDate) {
                         condText,
                         text = [];
 
-                    debug('getting text for condition:', condition);
+                    debugDaily('getting text for condition:', condition);
 
                     try {
                         conditionMod = require('./conditions/' + condition.topic);
                     } catch(err) {
-                        debug('No condition module for %s', condition.topic);
+                        debugDaily('No condition module for %s', condition.topic);
                     }
 
                     if (!conditionMod) { return ''; }
@@ -182,7 +186,7 @@ function getDailySummary(o, data, reqDate) {
  * @param  {Object} o      The options for this instance of fuzzy weather
  * @param  {Object} data   The data returned from the Dark Sky API
  * @param  {Date} reqDate  The date of the request
- * @return {String}        The hour-by-hour text of the forecast
+ * @return {Object|null}   The hour-by-hour text of the forecast (null if not today or tomorrow)  { data, conditions, forecast }
  */
 function getHourByHour(o, data, reqDate) {
     let info = {
@@ -196,7 +200,7 @@ function getHourByHour(o, data, reqDate) {
     info.data = refinedData.hourly;
 
     let simpleDate = moment(reqDate).format('YYYY-MM-DD');
-    debug(`getting hour-by-hour summary for ${simpleDate}`);
+    debugHourly(`getting hour-by-hour summary for ${simpleDate}`);
 
     let conditionMod;
     let text = [];
@@ -205,12 +209,14 @@ function getHourByHour(o, data, reqDate) {
     try {
         conditionMod = require('./conditions/' + dayHeadliner.topic);
     } catch(err) {
-        debug('No condition module for %s', dayHeadliner.topic);
+        debugHourly('No condition module for %s', dayHeadliner.topic);
     }
 
     if (conditionMod) {
         text.push(conditionMod.headline());
     }
+
+    // TODO: get hourlyText for all pertinent conditions
 
     info.forecast = render(text.join(' '), {
         day: getDayOfWeek(reqDate, true)
@@ -263,6 +269,89 @@ function getHourByHourData(data, reqDate) {
     return refinedData;
 }
 
+/**
+* Build the text for the current conditions (today / right now)
+*
+* @param  {Object} o      The options for this instance of fuzzy weather
+* @param  {Object} data   The data returned from the Dark Sky API
+* @param  {Date} reqDate  The date of the request
+* @return {Object|null}   The current condition text of the forecast (or null if not for today) { data, conditions, forecast }
+ */
+function getCurrentConditions(o, data, reqDate) {
+    let simpleDate = moment(reqDate).format('YYYY-MM-DD');
+    let todaySimple = moment(Date.now()).format('YYYY-MM-DD');
+    let text = [];
+    let info = {
+        data: data.currently,
+        forecast: null
+    };
+
+    if (simpleDate !== todaySimple) { return null; }
+
+    debugCurrently(`getting current conditions for ${simpleDate}`);
+
+    if (data.currently.precipProbability > 0.8) {
+        let intensityText = '';
+        if (data.currently.precipIntensity > 0.7) {
+            intensityText = 'extremely heavy';
+        } else if (data.currently.precipIntensity > 0.2) {
+            intensityText = 'heavy';
+        } else if (data.currently.precipIntensity > 0.07) {
+            intensityText = 'moderate';
+        } else if (data.currently.precipIntensity > 0.01) {
+            intensityText = 'light';
+        } else {
+            if (data.currently.precipType === 'snow') {
+                intensityText = 'very light';
+            } else {
+                intensityText = 'drizzling';
+            }
+        }
+        text.push(`There is ${intensityText} ${data.currently.precipType} right now`);
+    } else {
+        if (data.currently.cloudCover < 0.4) {
+            text.push(`It's ${(data.currently.cloudCover > 0.1) ? 'mostly' : ''} sunny right now`);
+        } else if (data.currently.cloudCover < o.cloudBreak) {
+            text.push(`There are some clouds right now`);
+        } else {
+            text.push(`It's cloudy right now`);
+        }
+    }
+
+    let temp = `and it's currently ${Math.round(data.currently.temperature)} degrees`;
+    if (data.currently.apparentTemperature > (data.currently.temperature + 5) ||
+        data.currently.apparentTemperature < (data.currently.temperature - 5)) {
+        temp += `, but it feels like ${Math.round(data.currently.apparentTemperature)}`;
+    }
+    text.push(temp + '.');
+    if (data.currently.dewPoint >= o.dewPointBreak && data.currently.humidity >= o.humidityBreak) {
+        text.push(`It'll feel sticky as well with ${Math.round(data.currently.humidity * 100)} percent humidity.`);
+    }
+
+    if (data.currently.windSpeed > o.windBreak) {
+        text.push(`And the wind is up around ${Math.round(data.currently.windSpeed)} miles per hour.`);
+    }
+
+    if (data.alerts && data.alerts.length) {
+        let alerts = [];
+        data.alerts.forEach(function checkAlertTime(alert) {
+            if (data.currently.time > alert.time && data.currently.time < alert.expires) {
+                let expires = moment.tz(alert.expires * 1000, 'GMT').tz(data.timezone);
+                alerts.push(`${alert.title} until ${expires.format('ha')}`);
+            }
+        });
+        if (alerts.length > 1) {
+            text.push('There are multiple weather alerts:');
+        } else {
+            text.push('There is a weather alert:');
+        }
+        text = text.concat(alerts);
+    }
+
+    info.forecast = text.join(' ');
+    debugCurrently(info.forecast);
+    return info;
+}
 
 /**
  * This method takes some daily foreacast data and determines what conditions
@@ -368,65 +457,6 @@ function getDailyConditions(o, data) {
         return b.level - a.level;
     });
 }
-
-
-
-// function getDailyTemperatureText(data) {
-//     let text;
-//     let min = Math.round(data.temperatureMin);
-//     let max = Math.round(data.temperatureMax);
-//     let appMax = Math.round(data.apparentTemperatureMax);
-//
-//     if (max > 90) {
-//          text = 'It will reach ' + max + ' degrees';
-//          if (appMax > (max + 5)) {
-//              text += ', but it might feel more like ' + appMax;
-//          }
-//          text += '. Lows will be near ' + min;
-//
-//     } else if (max > 70) {
-//         text = 'The high will be ' + max + ' and the low around ' + min;
-//
-//     } else if (max > 40) {
-//         text = 'Temperatures will only get up to ' + max + ' with lows near ' + min;
-//
-//     } else {
-//         text = 'It might only hit ' + max;
-//         if (appMax < (max - 5)) {
-//             text += ', but it might only feel like ' + appMax;
-//         }
-//         text += '. The low is expected to be ' + min;
-//     }
-//
-//     return text;
-// }
-
-// function getDailyHumidityText(data) {
-//     let text;
-//
-//     if (data.dewPoint > o.dewPointBreak && data.humidity > o.humidityBreak) {
-//         text = 'The relative humidity will be near ' + (data.humidity * 100) +
-//             ' percent with the dew point at ' + Math.round(data.dewPoint);
-//     } else if (data.humidity < 0.4) {
-//         text = 'It\'s going to be very dry, grab that lotion. The humidity will only be ' + data.humidity;
-//     }
-//
-//     return text;
-// }
-//
-// function getDailyWindText(data) {
-//     let text;
-//
-//     if (data.windSpeed > 30) {
-//         text = 'The wind could be fierce today, reaching speeds near ' + Math.round(data.windSpeed) + ' miles per hour';
-//     } else if (data.windSpeed > 20) {
-//         text = 'There may be some breezy moments with wind speeds peaking around ' + Math.round(data.windSpeed) + ' miles per hour';
-//     } else if (data.windSpeed > 10) {
-//         text = 'There should be a light breeze in the air';
-//     }
-//
-//     return text;
-// }
 
 
 /* ****************************************************** *
