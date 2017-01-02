@@ -129,13 +129,12 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('hourByHour').that.is.a('object'),
                 expect(p).to.eventually.have.property('hourByHour')
-                    .that.has.property('forecast').that.is.a('string'),
+                    .that.has.property('forecast').that.is.a('string')
+                    .and.contains('rain'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('data').that.is.an('array'),
                 expect(p).to.eventually.have.property('hourByHour')
-                    .that.has.property('conditions').that.is.an('object'),
-                expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
-                expect(p).to.eventually.have.property('dailySummary').that.has.property('forecast').that.is.a('string')
+                    .that.has.property('conditions').that.is.an('object')
             ]);
         });
 

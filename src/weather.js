@@ -202,21 +202,22 @@ function getHourByHour(o, data, reqDate) {
     let simpleDate = moment(reqDate).format('YYYY-MM-DD');
     debugHourly(`getting hour-by-hour summary for ${simpleDate}`);
 
-    let conditionMod;
     let text = [];
-    let dayHeadliner = getDailyConditions(o, refinedData.daily)[0];
+    let conditions = getDailyConditions(o, refinedData.daily);
 
-    try {
-        conditionMod = require('./conditions/' + dayHeadliner.topic);
-    } catch(err) {
-        debugHourly('No condition module for %s', dayHeadliner.topic);
-    }
+    conditions.forEach(function getHourlyText(condition, i) {
+        try {
+            debugHourly('loading condition module for %s', condition.topic);
+            let conditionMod = require('./conditions/' + condition.topic);
+            if (i === 0) {
+                text.push(conditionMod.headline());
+            }
+            text.push(conditionMod.hourlyText(refinedData.hourly, data.timezone));
 
-    if (conditionMod) {
-        text.push(conditionMod.headline());
-    }
-
-    // TODO: get hourlyText for all pertinent conditions
+        } catch(err) {
+            debugHourly('Cannot get conditions from module for %s:', condition.topic, err.message);
+        }
+    });
 
     info.forecast = render(text.join(' '), {
         day: getDayOfWeek(reqDate, true)
