@@ -39,12 +39,12 @@ describe('rain module', function() {
     describe('rain daily text', function() {
 
         it('should return empty string for low probability', function() {
-            let result = rain.dailyText({}, { precipProbability: 0.05 });
+            let result = rain.dailyText({}, { precipProbability: 0.05 }, 'America/New_York');
             expect(result).to.be.a('string').and.have.property('length').that.equals(0);
         });
 
         it('should return correct text for rain', function() {
-            let result = rain.dailyText(rainCondition, dailyData);
+            let result = rain.dailyText(rainCondition, dailyData, 'America/New_York');
             expect(result).to.be.a('string');
             expect(result).to.contain('50 percent');
             expect(result).to.contain('moderate');

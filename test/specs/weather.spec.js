@@ -152,8 +152,8 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('hourByHour').that.is.an('object'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('forecast').that.is.a('string'),
-                expect(p).to.eventually.have.property('hourByHour')
-                    .that.has.property('forecast').that.contains('tomorrow'),
+                expect(p).to.eventually.have.property('hourByHour').that.has.property('forecast')
+                    .that.is.a('string'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('data').that.is.an('array'),
                 expect(p).to.eventually.have.property('hourByHour')
@@ -174,7 +174,7 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('forecast').that.is.a('string'),
                 expect(p).to.eventually.have.property('hourByHour')
-                    .that.has.property('forecast').that.contains('today'),
+                    .that.has.property('forecast').that.contains('rain'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('data').that.is.an('array'),
                 expect(p).to.eventually.have.property('hourByHour')

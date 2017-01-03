@@ -28,25 +28,24 @@ function getHeadline() {
  * Get text for rainy day
  * @param  {Object} condition The condition info: topic: { snow, probability, level }
  * @param  {Object} data      The weather data from the API
+ * @param  {String} timezone  The timezone for weather data
  * @return {String}           The text to use for rain information given the data provided
  */
-function getDailyText(condition, data) {
+function getDailyText(condition, data, timezone) {
     debug('getting rain text if prob is up:', data.precipProbability);
 
     if (data.precipProbability < 0.1) {
         return '';
     }
 
-    let peak = new Date(data.precipIntensityMaxTime * 1000);
-    peak = peak.getHours() + (peak.getTimezoneOffset() / 60);
-    peak = (peak > 12) ? ((peak - 12) + ' pm') : (peak + ' am');
+    let peak = moment.tz(data.precipIntensityMaxTime * 1000, 'GMT').tz(timezone);
 
     // TODO:
     // * base text on level
     // * create array of possible phrases
 
     let output =
-        `You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} peaking at around ${peak}.
+        `You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} peaking at around ${peak.format('ha')}.
         There is a ${Math.round(data.precipProbability * 100)} percent chance overall.`;
     debugOut(output);
     return output;

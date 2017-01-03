@@ -164,7 +164,7 @@ function getDailySummary(o, data, reqDate) {
                             day: day
                         }));
                     }
-                    condText = conditionMod.dailyText(condition, dailyData);
+                    condText = conditionMod.dailyText(condition, dailyData, data.timezone);
                     info.conditions[condition.topic] = condText;
                     text.push(render(condText, {
                         day: day
@@ -204,15 +204,11 @@ function getHourByHour(o, data, reqDate) {
     let text = [];
     let conditions = getDailyConditions(o, refinedData.daily);
 
-    conditions.forEach(function getHourlyText(condition, i) {
+    conditions.forEach(function getHourlyText(condition) {
         try {
             debugHourly('loading condition module for %s', condition.topic);
             let conditionMod = require('./conditions/' + condition.topic);
-            if (i === 0) {
-                text.push(conditionMod.headline());
-            }
             text.push(conditionMod.hourlyText(refinedData.hourly, data.timezone));
-
         } catch(err) {
             debugHourly('Cannot get conditions from module for %s:', condition.topic, err.message);
         }
