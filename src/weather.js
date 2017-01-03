@@ -84,9 +84,8 @@ module.exports = function(options = {}) {
                 return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`));
             }
 
-            let midnight = Math.round(reqDateObj.getTime() / 1000);
             request({
-                url: `https://api.darksky.net/forecast/${o.apiKey}/${o.location.lat},${o.location.lng},${midnight}`
+                url: `https://api.darksky.net/forecast/${o.apiKey}/${o.location.lat},${o.location.lng}`
             }, function(err, res, body) {
                 if (err) {
                     debug('Error from API call', err);

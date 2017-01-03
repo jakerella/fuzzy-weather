@@ -74,7 +74,7 @@ describe('Weather core', function() {
     describe('getting daily weather data', function() {
         beforeEach(function() {
             nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG},\\d+`))
+                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
                 .reply(200, weatherData);
         });
 
@@ -117,7 +117,7 @@ describe('Weather core', function() {
     describe('getting hourly weather data', function() {
         beforeEach(function() {
             nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG},\\d+`))
+                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
                 .reply(200, weatherData);
         });
 
@@ -204,7 +204,7 @@ describe('Weather core', function() {
             ];
 
             nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG},\\d+`))
+                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
                 .reply(200, weatherData);
 
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
@@ -227,7 +227,7 @@ describe('Weather core', function() {
             weatherData.currently = _.clone(origCurrently);
             weatherData.alerts = null;
             nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG},\\d+`))
+                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
                 .reply(200, weatherData);
 
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });

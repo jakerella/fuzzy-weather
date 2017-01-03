@@ -122,15 +122,17 @@ function getHourlyText(data, timezone) {
         // line to ensure correlation is strong enough in either direction
         let regrData = {};
         let regr = lsq(xValues, yValues, true, regrData);
-        debug(regr(0), regr(23), regrData);
+        let xMin = xValues[0];
+        let xMax = xValues[xValues.length-1];
+        debug(regr(xMin), regr(xMax), regrData);
         if (regrData.bErr < 0.05 && regrData.mErr < 0.005) {
-            if (regr(0) < regr(23) && (regr(23) - regr(0)) > 0.8) {
+            if (regr(xMin) < regr(xMax) && (regr(xMax) - regr(xMin)) > 0.4) {
                 text.push('There is an increasing rain chance through {day}.');
-            } else if (regr(0) > regr(23) && (regr(0) - regr(23)) > 0.8) {
+            } else if (regr(xMin) > regr(xMax) && (regr(xMin) - regr(xMax)) > 0.4) {
                 text.push('Rain chances decrease through {day}.');
-            } else if (Math.abs(regr(0) - regr(23)) < 0.3) {
+            } else if (Math.abs(regr(xMin) - regr(xMax)) < 0.3) {
                 let hours = moment.tz(data[0].time * 1000, 'GMT').tz(timezone);
-                hours.add(xValues[0], 'h');
+                hours.add(xValues[xMin], 'h');
                 let evenText = `Chances for rain are pretty steady from about ${hours.format('ha')} through`;
                 hours.add(xValues.length, 'h');
                 evenText += ` ${hours.format('ha')}.`;
