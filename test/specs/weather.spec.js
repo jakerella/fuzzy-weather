@@ -1,6 +1,7 @@
 'use strict';
 
 let nock = require('nock'),
+    debugOutput = require('debug')('fuzzy-weather:output'),
     chai = require('chai'),
     chaiPromise = require('chai-as-promised'),
     _ = require('lodash'),
@@ -85,10 +86,6 @@ describe('Weather core', function() {
 
             let day = DAYS_OF_WEEK[(new Date(reqDate)).getDay()];
 
-            // p.then(function(data) {
-            //     console.log(data.text);
-            // });
-
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
@@ -124,6 +121,13 @@ describe('Weather core', function() {
         it('should get an hour by hour summary type given a date of today', function() {
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
             let p = weather(Date.now());
+
+            p.then(function(data) {
+                debugOutput(data.date);
+                debugOutput('CURRENT', data.currently && data.currently.forecast);
+                debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
+                debugOutput('HOURLY', data.hourByHour && data.hourByHour.forecast);
+            });
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
