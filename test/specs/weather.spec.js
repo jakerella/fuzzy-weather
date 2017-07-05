@@ -32,7 +32,9 @@ describe('Weather core', function() {
 
     describe('options check', function() {
         it ('should return a promise', function() {
-            expect(weatherInit()()).to.be.a('promise');
+            let p = weatherInit()();
+            expect(p).to.be.a('promise');
+            expect(p).to.eventually.be.rejectedWith(Error);
         });
 
         it('should reject with no API key', function() {
