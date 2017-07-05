@@ -10,7 +10,7 @@ let nock = require('nock'),
         maxTemp: 75,
         minTemp: 55,
         heatIndexPercent: 0.05,
-        conditions: [ { type: 'rain', length: 5, delay: 8 } ]
+        conditions: [ { type: 'rain', length: 5, delay: 1 } ]
     }),
     origCurrently = _.clone(weatherData.currently);
 
@@ -134,6 +134,7 @@ describe('Weather core', function() {
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('hourByHour').that.is.a('object'),
+                expect(p).to.eventually.have.property('hourByHour').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('forecast').that.is.a('string')
                     .and.contains('rain'),
@@ -152,6 +153,7 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('currently').that.is.null,
                 expect(p).to.eventually.have.property('hourByHour').that.is.an('object'),
+                expect(p).to.eventually.have.property('hourByHour').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('forecast').that.is.a('string'),
                 expect(p).to.eventually.have.property('hourByHour').that.has.property('forecast')
@@ -173,6 +175,7 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
                 expect(p).to.eventually.have.property('hourByHour').that.is.an('object'),
+                expect(p).to.eventually.have.property('hourByHour').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('hourByHour')
                     .that.has.property('forecast').that.is.a('string'),
                 expect(p).to.eventually.have.property('hourByHour')
@@ -218,7 +221,7 @@ describe('Weather core', function() {
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
-                expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast'),
+                expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('currently').that.has.property('forecast').that.is.a('string')
                     .that.contains(Math.round(weatherData.currently.temperature) + ' degrees')
                     .and.contains('feels like ' + Math.round(weatherData.currently.apparentTemperature))
@@ -241,7 +244,7 @@ describe('Weather core', function() {
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
-                expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast'),
+                expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('currently').that.has.property('forecast').that.is.a('string')
                     .that.contains(Math.round(weatherData.currently.temperature) + ' degrees')
                     .and.to.not.contain('rain')

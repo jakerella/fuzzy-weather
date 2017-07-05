@@ -29,29 +29,10 @@ let weather = require('fuzzy-weather')({
 
 weather()  // defaults to weather forecast for today
     .then(function(data) {
-        console.log(data.text);
+        console.log(data);
     })
     .catch(console.error);
 ```
-
-### API Key
-
-You will need a Dark Sky API key to use this module. Head over to their
-[developer documentation](https://darksky.net/dev/) and sign up. You can then
-get your API key from the [account page](https://darksky.net/dev/account).
-
-## Limits
-
-Note that Dark Sky does impose some [API limits](https://darksky.net/dev/docs/faq) -
-as of this update, that limit was 1,000 API calls per day for the free tier. If
-you require more than that, simply update your account with a credit card and
-they will bill you $0.0001 per call beyond that.
-
-### Forecast Only
-
-Additionally, note that this library is all about forecasting, thus you can only
-get fuzzy weather data for dates in the future (including the current day)
-**within 7 days**.
 
 ## Options
 
@@ -117,6 +98,73 @@ Get forecast for timestamp (must be within 7 days of current date):
 let weather = require('fuzzy-weather')({ /* options... */ });
 weather(1480492800000).then(function() { ... });
 ```
+
+## Response Data
+
+The primary function of this library (see usage above) will always return a `Promise`
+which you must then attach handlers to. A rejected Promise will always be fulfilled
+with an `Error` object, and a resolved Promise will always provide the same data
+structure:
+
+```
+{
+    date: Date,
+    currently: Object | null,
+    hourByHour: Object | null,
+    dailySummary: Object
+}
+```
+
+The `date` above will be a JavaScript `Date` object representing the date this
+forecast is for. The other three sections will always have the same substructure:
+
+```
+{
+    forecast: String,
+    data: Object,
+    conditions: Object
+}
+```
+
+That said, they will not always be present. The `dailySummary` block is the _only_
+section that will _always_ be provided. The `currently` section is only provided
+if the requested date is the current day. The `hourByHour` section is only provided
+if the requested date is within 48 hours (Dark Sky only provides hourly data for
+the next 48 hours).
+
+The data within those three blocks will contain:
+
+* **`forecast`**: This is really the reason you're here. This will be a string that
+represents the forecast for the requested day. It should be suitable for a voice
+interface (like Alexa or Google Home).
+* **`data`**: The `data` block within these will be the data as provided by the
+Dark Sky API. You should review the [developer documentation](https://darksky.net/dev/)
+on Dark Sky's website for more information.
+* **`conditions`**: A hash of "condition":"readable text" pairs. For example, it 
+might contain `{ "heat": "it'll be a scorcher tomorrow" }`, but _only_ if the
+requested date was tomorrow _and_ the forecast data calls for above normal temperatures.
+Other conditions might include: "wind", "cold", "rain", "snow", "humidity", etc.
+
+## Notes and Such
+
+### API Key
+
+You will need a Dark Sky API key to use this module. Head over to their
+[developer documentation](https://darksky.net/dev/) and sign up. You can then
+get your API key from the [account page](https://darksky.net/dev/account).
+
+### Limits
+
+Note that Dark Sky does impose some [API limits](https://darksky.net/dev/docs/faq) -
+as of this update, that limit was 1,000 API calls per day for the free tier. If
+you require more than that, simply update your account with a credit card and
+they will bill you $0.0001 per call beyond that.
+
+#### Forecast Only
+
+Additionally, note that this library is all about forecasting, thus you can only
+get fuzzy weather data for dates in the future (including the current day)
+**within 7 days**.
 
 ## Author and License
 
