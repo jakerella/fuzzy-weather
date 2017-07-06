@@ -6,7 +6,7 @@ let debug = require('debug')('fuzzy-weather'),
     debugDaily = require('debug')('fuzzy-weather:daily'),
     _ = require('lodash'),
     request = require('request'),
-    moment = require('moment');
+    moment = require('moment-timezone');
 require('./array-util');
 
 const OPTIONS = {
