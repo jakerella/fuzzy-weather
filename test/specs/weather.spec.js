@@ -86,6 +86,12 @@ describe('Weather core', function() {
             let reqDate = Date.now() + (2 * 86400000);
             let p = weather(reqDate);
 
+            p.then(function(data) {
+                debugOutput('CURRENT', data.currently && data.currently.forecast);
+                debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
+                debugOutput('HOURLY', data.hourByHour && data.hourByHour.forecast);
+            });
+
             let day = DAYS_OF_WEEK[(new Date(reqDate)).getDay()];
 
             return Promise.all([
@@ -192,7 +198,6 @@ describe('Weather core', function() {
     });
 
     describe('getting current weather data', function() {
-
         it('should get current conditions for today with all sorts of activity', function() {
             weatherData.currently = _.clone(weatherData.currently);
             weatherData.currently.apparentTemperature = weatherData.currently.temperature + 6;

@@ -152,8 +152,16 @@ function getDailySummary(o, data, reqDate) {
             dailyData.type = 'daily';
             let day = getDayOfWeek(reqDate, true);
 
+            let text = render(
+                `{day} we'll see a high of ${Math.round(dailyData.temperatureMax)}
+                degrees and a low of ${Math.round(dailyData.temperatureMin)}.`,
+                {
+                    day: day
+                }
+            );
+
             info.data = dailyData;
-            info.forecast = getDailyConditions(o, dailyData)
+            text += ' ' + getDailyConditions(o, dailyData)
                 .map(function(condition, i) {
                     let conditionMod,
                         condText,
@@ -182,6 +190,8 @@ function getDailySummary(o, data, reqDate) {
                     return text.join(' ');
                 })
                 .join(' ');
+
+            info.forecast = text;
         }
     });
 
@@ -213,6 +223,8 @@ function getHourByHour(o, data, reqDate) {
 
     let text = [];
     let conditions = getDailyConditions(o, refinedData.daily);
+
+    // TODO: need to add temperature to the forecast in all cases
 
     let dailyData = {};
     data.daily.data.forEach(function(singleDayData) {
