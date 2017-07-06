@@ -191,7 +191,7 @@ describe('Weather core', function() {
 
     });
 
-    describe('getting daily weather data', function() {
+    describe('getting current weather data', function() {
 
         it('should get current conditions for today with all sorts of activity', function() {
             weatherData.currently = _.clone(weatherData.currently);
