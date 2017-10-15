@@ -152,16 +152,8 @@ function getDailySummary(o, data, reqDate) {
             dailyData.type = 'daily';
             let day = getDayOfWeek(reqDate, true);
 
-            let text = render(
-`{day} we'll see a high of ${Math.round(dailyData.temperatureMax)}
-degrees and a low of ${Math.round(dailyData.temperatureMin)}.`,
-                {
-                    day: day
-                }
-            );
-
             info.data = dailyData;
-            text += ' ' + getDailyConditions(o, dailyData)
+            let text = getDailyConditions(o, dailyData)
                 .map(function(condition, i) {
                     let conditionMod,
                         condText,
@@ -189,9 +181,21 @@ degrees and a low of ${Math.round(dailyData.temperatureMin)}.`,
                     }));
                     return text.join(' ');
                 })
-                .join(' ');
+                .filter(function(piece) { return piece.trim().length; });
 
-            info.forecast = text.replace(/\n/g, ' ');
+            let hour = moment(dailyData.time * 1000).format('h');
+            if (!text.length && day === 'today' && hour > 10) {
+                text.push('The rest of today will be pretty quiet weather wise,');
+            } else if (!text.length) {
+                text.push(render(`{day} will be pretty quiet weather wise,`, { day }));
+            }
+
+            text.push(
+`we'll see a high of ${Math.round(dailyData.temperatureMax)}
+degrees and a low of ${Math.round(dailyData.temperatureMin)}.`
+            );
+
+            info.forecast = text.join(' ').replace(/\n/g, ' ');
         }
     });
 
