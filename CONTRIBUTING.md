@@ -39,6 +39,28 @@ When you're ready to submit the work back in, create a Pull Request to this
 repository. It will be reviewed and merged in when ready. Don't worry about bumping
 the version number or anything like that, we'll take care of it.
 
+### Other test and debug things...
+
+If you want to get to accelerate your development, try running the continuous tests
+while coding with `npm run watchtest`. You can also run these and turn on the more
+extensive logging (using the `debug` module) while watching tests with:
+`npm run watchtestdebug`. You can read more about using the `debug` module to
+log things in your own contributions on [the vision media repo](https://github.com/visionmedia/debug).
+It would be good for you to add debug messages in your code, but if you do, **please
+namespace your debug messages correctly**:
+
+```
+let debug = require('debug')('fuzzy-weather:your-module');
+
+...
+
+debug('This is a namespaced log message');
+```
+
+Then you can run the tests only printing out the debug messages for _your_ module:
+
+`~/fuzzy-weather$ DEBUG=fuzzy-weather:your-module* mocha test/specs`
+
 ### Want to see the live results?
 
 Running tests is great, but sometimes you want to see what the module _actual produces_.
