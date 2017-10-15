@@ -5,7 +5,7 @@ Powered by the [Dark Sky](https://darksky.net/) API!
 
 This library will retrieve weather data using the Dark Sky API and then provide
 a text description of the weather for a given day using a "fuzzy" representation
-suitable for use in a voice-command system. Think of this as a virtual
+suitable for use in a voice interface system. Think of this as a virtual
 meteorologist.
 
 > Note that you will need a [Dark Sky API key](https://darksky.net/dev/) to use this module!
@@ -22,7 +22,7 @@ Then you can use the module like so:
 let weather = require('fuzzy-weather')({
     apiKey: 'abcdefg1234567890',  // your Dark Sky API key!
     location: {
-        lat: 38.9649734,          // Washington, DC (the default)
+        lat: 38.9649734,
         lng: -77.0207249
     }
 });
@@ -61,6 +61,10 @@ avgTemps: [                        // defaults to temps in Washington, DC
     { high: Number, low: Number }  // Dec
 ]
 ```
+
+(Yes, yes... I'd love for this module to get that data from an API service based
+on the lat and lng, but I can't find a free one that provides this information.
+Maybe I'll set up a scraper for that some time in the future.)
 
 There are a few other options that define when the library will report that it is
 humid, windy, or sunny/cloudy:
@@ -140,7 +144,7 @@ interface (like Alexa or Google Home).
 * **`data`**: The `data` block within these will be the data as provided by the
 Dark Sky API. You should review the [developer documentation](https://darksky.net/dev/)
 on Dark Sky's website for more information.
-* **`conditions`**: A hash of "condition":"readable text" pairs. For example, it 
+* **`conditions`**: A hash of "condition":"readable text" pairs. For example, it
 might contain `{ "heat": "it'll be a scorcher tomorrow" }`, but _only_ if the
 requested date was tomorrow _and_ the forecast data calls for above normal temperatures.
 Other conditions might include: "wind", "cold", "rain", "snow", "humidity", etc.
@@ -160,11 +164,24 @@ as of this update, that limit was 1,000 API calls per day for the free tier. If
 you require more than that, simply update your account with a credit card and
 they will bill you $0.0001 per call beyond that.
 
+#### Current Data Retrieved
+
+Currently this module only supports **temperature** and **rain** data in the forecast.
+The rest of the data provided by Dark Sky will come in soon... I just need to get
+the rain module solid first, and ensure everything is working in the main module.
+
 #### Forecast Only
 
 Additionally, note that this library is all about forecasting, thus you can only
 get fuzzy weather data for dates in the future (including the current day)
-**within 7 days**.
+**up to 7 days** (the Dark Sky limit). You can't request the weather for a date
+in the past.
+
+## Issues? Want to help?
+
+If you have a problem you want addressed, please open an [issue on GitHub](https://github.com/jakerella/fuzzy-weather/issues).
+If you want to help, please see the [CONTRIBUTING](CONTRIBUTING.md) documentation,
+I would be more than happy to see other contributors on this package!
 
 ## Author and License
 
