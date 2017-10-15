@@ -153,8 +153,8 @@ function getDailySummary(o, data, reqDate) {
             let day = getDayOfWeek(reqDate, true);
 
             let text = render(
-                `{day} we'll see a high of ${Math.round(dailyData.temperatureMax)}
-                degrees and a low of ${Math.round(dailyData.temperatureMin)}.`,
+`{day} we'll see a high of ${Math.round(dailyData.temperatureMax)}
+degrees and a low of ${Math.round(dailyData.temperatureMin)}.`,
                 {
                     day: day
                 }
@@ -191,7 +191,7 @@ function getDailySummary(o, data, reqDate) {
                 })
                 .join(' ');
 
-            info.forecast = text;
+            info.forecast = text.replace(/\n/g, ' ');
         }
     });
 
@@ -246,7 +246,7 @@ function getHourByHour(o, data, reqDate) {
         }
     });
 
-    info.forecast = render(text.join(' '), {
+    info.forecast = render(text.join(' ').replace(/\n/g, ' '), {
         day: getDayOfWeek(reqDate, true)
     });
 
@@ -394,7 +394,7 @@ function getCurrentConditions(o, data, reqDate) {
         text = text.concat(alerts);
     }
 
-    info.forecast = text.join(' ');
+    info.forecast = text.join(' ').replace(/\n/g, ' ');
     debugCurrently(info.forecast);
     return info;
 }

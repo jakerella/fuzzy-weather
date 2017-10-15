@@ -45,8 +45,8 @@ function getDailyText(condition, data, timezone) {
     // * create array of possible phrases
 
     let output =
-        `You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} peaking at around ${peak.format('ha')}.
-        There is a ${Math.round(data.precipProbability * 100)} percent chance overall.`;
+`You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} peaking at around ${peak.format('ha')}.
+There is a ${Math.round(data.precipProbability * 100)} percent chance overall.`;
     debugOut(output);
     return output;
 }
@@ -155,21 +155,21 @@ function getHourlyText(data, timezone) {
 
             if (i > 0) {
                 description =
-                    `There's another chance beginning about ${instance.startHour}
-                    peaking at ${instance.maxPrecipProbabilityHour} with a
-                    ${Math.round(instance.maxPrecipProbability * 100)} percent chance.`;
+`There's another chance beginning about ${instance.startHour}
+peaking at ${instance.maxPrecipProbabilityHour} with a
+${Math.round(instance.maxPrecipProbability * 100)} percent chance.`;
             } else {
                 description =
-                    `Chances are good for rain starting about ${instance.startHour} with a
-                    ${Math.round(instance.startPercent * 100)} percent chance`;
+`Chances are good for rain starting about ${instance.startHour} with a
+${Math.round(instance.startPercent * 100)} percent chance`;
                 if (instance.startHour === instance.maxPrecipProbabilityHour ||
                     instance.startPercent === instance.maxPrecipProbability) {
                     description += '.';
                 } else {
                     description +=
-                        ` rising to
-                        ${Math.round(instance.maxPrecipProbability * 100)} percent at
-                        ${instance.maxPrecipProbabilityHour}.`;
+` rising to
+${Math.round(instance.maxPrecipProbability * 100)} percent at
+${instance.maxPrecipProbabilityHour}.`;
                 }
             }
             if (!holdMaxIntensity || instance.maxIntensity > holdMaxIntensity.value) {
