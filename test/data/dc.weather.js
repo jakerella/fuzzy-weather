@@ -48,8 +48,7 @@ module.exports = function generateWeather(location = {}, hourByHour = {}, start 
 function generateHourByHour(conditions = {}, now = 0) {
     let hourly = [];
     let daily = [{}, {}];
-    let hour = (new Date()).getHours();
-    let dayPeakPercent = 1 - (Math.abs(hour - 14) / 14);
+    let temps = [];
     let maxPrecipProbability = 1 - (Math.random() / 2);
     let maxPrecipIntensity = (maxPrecipProbability * 0.8) - (Math.random() / 2);
 
@@ -58,10 +57,21 @@ function generateHourByHour(conditions = {}, now = 0) {
     conditions.heatIndexPercent = conditions.heatIndexPercent || 0;
     conditions.conditions = conditions.conditions || [];
 
-    debug('hourly conditions to generate', conditions);
+    debug(`hourly conditions to generate for time: ${now}`, conditions);
+
+    // Determine temps at each hour for use in hourly data generation below
+    // TODO: support non-sinusoidal temp curves
+    let amp = (conditions.maxTemp - conditions.minTemp) / 2;
+    let midTempHour = (conditions.dayPeakHour || 15) - 6;
+    let midTemp = conditions.minTemp + amp;
+    for (let i=0; i<24; ++i) {
+        let currTemp = amp * Math.sin((Math.PI / 12) * (i - midTempHour)) + midTemp;
+        temps[i] = currTemp;
+    }
 
     for (let i=0; i<49; ++i) {
-        let currTemp = conditions.minTemp + ((conditions.maxTemp - conditions.minTemp) * dayPeakPercent);
+        let clockHour = (new Date((now + (i * 3600)) * 1000)).getHours();
+
         // basic set
         let hour = {
             time: now + (i * 3600),
@@ -70,8 +80,8 @@ function generateHourByHour(conditions = {}, now = 0) {
             precipIntensity: 0.0000,
             precipProbability: 0.00,
             precipType: 'rain',
-            temperature: currTemp,
-            apparentTemperature: currTemp + (currTemp * conditions.heatIndexPercent),
+            temperature: temps[clockHour],
+            apparentTemperature: temps[clockHour] + (temps[clockHour] * conditions.heatIndexPercent),
             dewPoint: 65.00,
             humidity: 0.60,
             windSpeed: 0.00,
@@ -88,8 +98,6 @@ function generateHourByHour(conditions = {}, now = 0) {
                 let percentComplete = Math.max(0.1, (i - conditions.conditions[j].delay) / conditions.conditions[j].length);
 
                 if (conditions.conditions[j].type === 'rain') {
-                    debug('adding rain condition at hour', i);
-
                     let intensity = 0;
                     let probability = 0;
                     if (form === 'bell') {
