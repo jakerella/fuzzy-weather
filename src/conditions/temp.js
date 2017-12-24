@@ -49,7 +49,6 @@ function getHourlyText(data, timezone, dailyData) {
     let dailyMaxTime = moment.tz(dailyData.temperatureMaxTime * 1000, 'GMT').tz(timezone);
     let dailyMinTime = moment.tz(dailyData.temperatureMinTime * 1000, 'GMT').tz(timezone);
 
-    console.log(dailyData.temperatureMinTime, dailyData.temperatureMaxTime);
     debug('max/min', dailyMinTime.format('h'), dailyMaxTime.format('h'));
 
     data.forEach(function determineInstances(hourData, i) {
