@@ -392,7 +392,7 @@ function getCurrentConditions(o, data, reqDate) {
         });
         if (alerts.length > 1) {
             text.push('There are multiple weather alerts:');
-        } else {
+        } else if (alerts.length) {
             text.push('There is a weather alert:');
         }
         text = text.concat(alerts);
