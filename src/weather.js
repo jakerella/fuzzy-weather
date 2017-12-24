@@ -242,7 +242,7 @@ function getHourByHour(o, data, reqDate) {
         try {
             debugHourly('loading condition module for %s', condition.topic);
             let conditionMod = require('./conditions/' + condition.topic);
-            text.push(conditionMod.hourlyText(refinedData.hourly, data.timezone));
+            text.push(conditionMod.hourlyText(refinedData.hourly, data.timezone, dailyData));
             info.conditions[condition.topic] = conditionMod.dailyText(condition, dailyData, data.timezone);
 
         } catch(err) {
