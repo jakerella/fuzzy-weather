@@ -49,6 +49,7 @@ function generateHourByHour(conditions = {}, now = 0) {
     let hourly = [];
     let daily = [{}, {}];
     let temps = [];
+    let tempsDayTwo = [];
     let maxPrecipProbability = 1 - (Math.random() / 2);
     let maxPrecipIntensity = (maxPrecipProbability * 0.8) - (Math.random() / 2);
 
@@ -60,17 +61,47 @@ function generateHourByHour(conditions = {}, now = 0) {
     debug(`hourly conditions to generate for time: ${now}`, conditions);
 
     // Determine temps at each hour for use in hourly data generation below
-    // TODO: support non-sinusoidal temp curves
+    let dayCurve = conditions.dayCurve || 'sin';
     let amp = (conditions.maxTemp - conditions.minTemp) / 2;
     let midTempHour = (conditions.dayPeakHour || 15) - 6;
     let midTemp = conditions.minTemp + amp;
-    for (let i=0; i<24; ++i) {
-        let currTemp = amp * Math.sin((Math.PI / 12) * (i - midTempHour)) + midTemp;
-        temps[i] = currTemp;
+
+    if (dayCurve === 'down') {
+        // for current day...
+        for (let i=0; i<24; ++i) {
+            let currTemp = conditions.maxTemp;
+            if (i < conditions.dayPeakHour) {
+                currTemp -= (1 - (i / conditions.dayPeakHour)) * amp;
+            } else if (i > conditions.dayPeakHour) {
+                currTemp -= ((i - conditions.dayPeakHour) / (23 - conditions.dayPeakHour)) * (amp * 2);
+            }
+            temps[i] = currTemp;
+        }
+
+        // for next day
+        for (let i=0; i<24; ++i) {
+            let currTemp = (amp / 2) * Math.sin((Math.PI / 12) * (i - 7)) + (midTemp - (amp / 2));
+            tempsDayTwo[i] = Math.round(currTemp);
+        }
+    } else {
+        // Default is a sin curve
+        for (let i=0; i<24; ++i) {
+            let currTemp = amp * Math.sin((Math.PI / 12) * (i - midTempHour)) + midTemp;
+            temps[i] = currTemp;
+        }
     }
 
+    let startDate = new Date(now * 1000);
     for (let i=0; i<49; ++i) {
-        let clockHour = (new Date((now + (i * 3600)) * 1000)).getHours();
+        let nowDate = (new Date((now + (i * 3600)) * 1000));
+        let clockHour = nowDate.getHours();
+
+        let baseTemp = temps[clockHour];
+        if (tempsDayTwo.length && nowDate.getDate() !== startDate.getDate()) {
+            baseTemp = tempsDayTwo[clockHour];
+        }
+
+        debug('Base temp set for hour index', i, baseTemp);
 
         // basic set
         let hour = {
@@ -80,8 +111,8 @@ function generateHourByHour(conditions = {}, now = 0) {
             precipIntensity: 0.0000,
             precipProbability: 0.00,
             precipType: 'rain',
-            temperature: temps[clockHour],
-            apparentTemperature: temps[clockHour] + (temps[clockHour] * conditions.heatIndexPercent),
+            temperature: baseTemp,
+            apparentTemperature: baseTemp + (baseTemp * conditions.heatIndexPercent),
             dewPoint: 65.00,
             humidity: 0.60,
             windSpeed: 0.00,
