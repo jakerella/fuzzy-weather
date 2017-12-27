@@ -2,7 +2,7 @@
   "name": "fuzzy-weather",
   "description": "A Node module for retrieving a 'fuzzy' weather forecast (words, not data) powered by Dark Sky",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "src/weather.js",
   "directories": {
     "test": "test"
