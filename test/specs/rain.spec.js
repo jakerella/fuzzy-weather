@@ -25,7 +25,7 @@ let rainCondition = {
 chai.should();
 let expect = chai.expect;
 
-xdescribe('rain module', function() {
+describe('rain module', function() {
 
     describe('rain headline', function() {
 
