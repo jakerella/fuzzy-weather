@@ -6,7 +6,8 @@ let nock = require('nock'),
     chaiPromise = require('chai-as-promised'),
     _ = require('lodash'),
     weatherInit = require('../../src/weather'),
-    weatherData = require('../data/dc.weather')(null, {
+    generator = require('../data/dc.weather'),
+    weatherData = generator(null, {
         maxTemp: 75,
         minTemp: 55,
         heatIndexPercent: 0.05,
@@ -21,7 +22,17 @@ let expect = chai.expect;
 const API_KEY = '1234567890';
 const LAT = 38.9649734;
 const LNG = -77.0207249;
+const TZ = 'America/New_York';
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const locationData = {
+    'latitude': LAT,
+    'longitude': LNG,
+    'timezone': TZ,
+    'offset': ((new Date()).getTimezoneOffset() / 60) * -1
+};
+const generatedReqDate = new Date();
+generatedReqDate.setHours(7);
 
 describe('Weather core', function() {
 
@@ -78,12 +89,17 @@ describe('Weather core', function() {
         beforeEach(function() {
             nock('https://api.darksky.net')
                 .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
-                .reply(200, weatherData);
+                .reply(200, generator(locationData, {
+                    maxTemp: 75,
+                    minTemp: 55,
+                    heatIndexPercent: 0.05,
+                    conditions: [ { type: 'rain', length: 5, delay: 1 } ]
+                }, generatedReqDate.getTime()));
         });
 
         it('should resolve with correct data properties given valid options', function() {
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let reqDate = Date.now() + (2 * 86400000);
+            let reqDate = generatedReqDate.getTime() + (2 * 86400000);
             let p = weather(reqDate);
 
             p.then(function(data) {
@@ -114,6 +130,36 @@ describe('Weather core', function() {
                     .that.has.property('conditions').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('conditions').that.is.an('object').that.has.property('rain')
+            ]);
+        });
+
+        it('should resolve with correct temp data given date of today', function() {
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+
+            let p = weather(generatedReqDate.getTime());
+
+            p.then(function(data) {
+                debugOutput('CURRENT', data.currently && data.currently.forecast);
+                debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
+                debugOutput('HOURLY', data.hourByHour && data.hourByHour.forecast);
+            });
+
+            return Promise.all([
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
+                expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
+                expect(p).to.eventually.have.property('dailySummary')
+                    .that.has.property('forecast').that.is.a('string'),
+                expect(p).to.eventually.have.property('dailySummary')
+                    .that.has.property('forecast').that.contains('today'),
+                expect(p).to.eventually.have.property('dailySummary')
+                    .that.has.property('forecast').that.contains('rain'),
+                expect(p).to.eventually.have.property('dailySummary')
+                    .that.has.property('forecast').that.contains('currently 60 degrees'),
+                expect(p).to.eventually.have.property('dailySummary')
+                    .that.has.property('forecast').that.contains('75 degrees today around 3 pm'),
+                expect(p).to.eventually.have.property('dailySummary')
+                    .that.has.property('forecast').that.contains('74 at the end')
             ]);
         });
 

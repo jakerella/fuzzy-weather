@@ -6,7 +6,8 @@ let debug = require('debug')('fuzzy-weather'),
     debugDaily = require('debug')('fuzzy-weather:daily'),
     _ = require('lodash'),
     request = require('request'),
-    moment = require('moment-timezone');
+    moment = require('moment-timezone'),
+    tempModule = require('./conditions/temp');
 require('./array-util');
 
 const OPTIONS = {
@@ -190,10 +191,11 @@ function getDailySummary(o, data, reqDate) {
                 text.push(render(`{day} will be pretty quiet weather wise,`, { day }));
             }
 
-            text.push(
-`we'll see a high of ${Math.round(dailyData.temperatureMax)}
-degrees and a low of ${Math.round(dailyData.temperatureMin)}.`
-            );
+
+            let refinedData = getHourByHourData(data, reqDate);
+            text.push(render(tempModule.summary(data.timezone, simpleDate, dailyData, (refinedData && refinedData.hourly)), {
+                day: day
+            }));
 
             info.forecast = text.join(' ').replace(/\n/g, ' ');
         }
@@ -228,7 +230,7 @@ function getHourByHour(o, data, reqDate) {
     let text = [];
     let conditions = getDailyConditions(o, refinedData.daily);
 
-    // TODO: need to add temperature to the forecast in all cases
+    // TODO: need to add full temperature data/text to the forecast in all cases where possible
 
     let dailyData = {};
     data.daily.data.forEach(function(singleDayData) {
@@ -237,6 +239,8 @@ function getHourByHour(o, data, reqDate) {
             singleDayData.type = 'daily';
         }
     });
+
+    text.push(tempModule.summary(data.timezone, simpleDate, dailyData, refinedData.hourly));
 
     conditions.forEach(function getHourlyText(condition) {
         try {
