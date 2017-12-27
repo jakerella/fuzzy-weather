@@ -151,7 +151,7 @@ describe('Weather core', function() {
 
     });
 
-    xdescribe('getting hourly weather data', function() {
+    describe('getting hourly weather data', function() {
         beforeEach(function() {
             nock('https://api.darksky.net')
                 .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
@@ -229,7 +229,7 @@ describe('Weather core', function() {
 
     });
 
-    xdescribe('getting current weather data', function() {
+    describe('getting current weather data', function() {
         it('should get current conditions for today with all sorts of activity', function() {
             weatherData.currently = _.clone(weatherData.currently);
             weatherData.currently.apparentTemperature = weatherData.currently.temperature + 6;
