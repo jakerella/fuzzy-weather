@@ -7,37 +7,20 @@ let debug = require('debug')('fuzzy-weather:temp'),
 require('../array-util');
 
 module.exports = {
-    headline: function() { return 'There\'s gonna be some temperatures.'; },
-    dailyText: getDailyText,
-    hourlyText: getHourlyText
+    summary: getSummary,
+    detail: getDetail
 };
 
+function getSummary(timezone, dailyData, hourlyData) {
+    let text = [];
 
-/**
- * Get text for temperature on a given day
- * @param  {Object} condition The condition info: topic: { snow, probability, level }
- * @param  {Object} data      The weather data from the API
- * @param  {String} timezone  The timezone for weather data
- * @return {String}           The text to use for temp information given the data provided
- */
-function getDailyText(condition, data, timezone) {
-    debug('getting daily temps...');
-
-    if (data.precipProbability < 0.1) {
+    if (!dailyData && !hourlyData) {
         return '';
     }
+    if (!hourlyData) {
+        return simpleSummary(timezone, dailyData);
+    }
 
-    let peak = moment.tz(data.temperatureMaxTime * 1000, 'GMT').tz(timezone);
-
-    let output =
-`The low {day} is ${Math.round(data.temperatureMin)} degrees. You should expect a
-high of ${Math.round(data.temperatureMax)} degrees peaking around ${peak.format('ha')}.`;
-    debugOut(output);
-    return output;
-}
-
-function getHourlyText(data, timezone, dailyData) {
-    let text = [];
 
     let xValues = [];
     let yValues = [];
@@ -49,9 +32,7 @@ function getHourlyText(data, timezone, dailyData) {
     let dailyMaxTime = moment.tz(dailyData.temperatureMaxTime * 1000, 'GMT').tz(timezone);
     let dailyMinTime = moment.tz(dailyData.temperatureMinTime * 1000, 'GMT').tz(timezone);
 
-    debug('max/min', dailyMinTime.format('h'), dailyMaxTime.format('h'));
-
-    data.forEach(function determineInstances(hourData, i) {
+    hourlyData.forEach(function determineInstances(hourData, i) {
         let hour = moment.tz(hourData.time * 1000, 'GMT').tz(timezone);
         xValues.push(hour.hours());
         yValues.push(hourData.temperature);
@@ -66,6 +47,8 @@ function getHourlyText(data, timezone, dailyData) {
         }
     });
 
+    debug(`max/min: ${minTemp} at ${dailyMinTime.format('H')} / ${maxTemp} at ${dailyMaxTime.format('H')}`);
+
     if (xValues.length) {
         // TODO...
         // Using linear regression on this temp data does not appear to be giving
@@ -73,12 +56,12 @@ function getHourlyText(data, timezone, dailyData) {
         // day. For now, I'm going to manually look at peak hours and try to
         // determine if this is a typical temp curve day or not.
 
-        let maxHours = moment.tz(data[0].time * 1000, 'GMT').tz(timezone);
+        let maxHours = moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone);
         maxHours.add(maxHour, 'h');
-        let minHours = moment.tz(data[0].time * 1000, 'GMT').tz(timezone);
+        let minHours = moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone);
         minHours.add(minHour, 'h');
 
-        if (dailyMaxTime.format('h') > 17) {
+        if (dailyMaxTime.format('H') > 17) {
             text.push(
 `The temperature is currently ${Math.round(yValues[0])} degrees and {day} it will be climbing
 through the evening, peaking at about ${Math.round(maxTemp)} degrees around ${maxHours.format('h a')}.`
@@ -92,7 +75,7 @@ through the evening, peaking at about ${Math.round(maxTemp)} degrees around ${ma
                 });
             }
 
-        } else if (dailyMaxTime.format('h') < 12) {
+        } else if (dailyMaxTime.format('H') < 12) {
             text.push(
 `The temperature is currently ${Math.round(yValues[0])} degrees, but temps will be heading
 down through {day}, it'll get down to about ${Math.round(minTemp)} degrees at ${minHours.format('h a')}.`
@@ -124,4 +107,39 @@ ${Math.round(maxTemp)} degrees around ${maxHours.format('h a')}.`
 
     debugOut(text.join(' ').replace(/\n/g, ' '));
     return text.join(' ').replace(/\n/g, ' ');
+}
+
+
+function simpleSummary(timezone, data) {
+    let output;
+
+    debug('no hourly data, only getting general daily summary');
+
+    let low = moment.tz(data.temperatureMinTime * 1000, 'GMT').tz(timezone);
+    let peak = moment.tz(data.temperatureMaxTime * 1000, 'GMT').tz(timezone);
+
+    if (peak.format('H') < 12) {
+        output =
+`Temperatures will be heading down {day}. The high of ${Math.round(data.temperatureMax)} degrees will be at
+${peak.format('h a')} and temps will get down to ${Math.round(data.temperatureMin)} at ${low.format('h a')}.`;
+
+    } else if (peak.format('H') > 17) {
+        output =
+`Temperatures will increase throughout the day {day}. The low will be ${Math.round(data.temperatureMin)}
+degrees at ${low.format('h a')} and rise to ${Math.round(data.temperatureMax)} at ${peak.format('h a')}.`;
+
+    } else {
+        output =
+`The low {day} will be ${Math.round(data.temperatureMin)} degrees at around ${low.format('h a')}. You should expect a
+high of ${Math.round(data.temperatureMax)} degrees around ${peak.format('h a')}.`;
+    }
+
+    debugOut(output);
+    return output;
+}
+
+
+function getDetail(data, timezone, dailyData) {
+    // TODO: more detailed temp info for the days...
+    return 'temps';
 }

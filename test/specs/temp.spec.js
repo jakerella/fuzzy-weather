@@ -25,7 +25,7 @@ let dailyData = {
 chai.should();
 let expect = chai.expect;
 
-describe('temp module', function() {
+xdescribe('temp module', function() {
 
     describe('temp daily text', function() {
 
