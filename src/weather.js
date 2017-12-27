@@ -193,7 +193,7 @@ function getDailySummary(o, data, reqDate) {
 
 
             let refinedData = getHourByHourData(data, reqDate);
-            text.push(render(tempModule.summary(data.timezone, dailyData, (refinedData && refinedData.hourly)), {
+            text.push(render(tempModule.summary(data.timezone, simpleDate, dailyData, (refinedData && refinedData.hourly)), {
                 day: day
             }));
 
@@ -239,6 +239,8 @@ function getHourByHour(o, data, reqDate) {
             singleDayData.type = 'daily';
         }
     });
+
+    text.push(tempModule.summary(data.timezone, simpleDate, dailyData, refinedData.hourly));
 
     conditions.forEach(function getHourlyText(condition) {
         try {

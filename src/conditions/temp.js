@@ -11,7 +11,7 @@ module.exports = {
     detail: getDetail
 };
 
-function getSummary(timezone, dailyData, hourlyData) {
+function getSummary(timezone, simpleDate, dailyData, hourlyData) {
     let text = [];
 
     if (!dailyData && !hourlyData) {
@@ -49,60 +49,71 @@ function getSummary(timezone, dailyData, hourlyData) {
 
     debug(`max/min: ${minTemp} at ${dailyMinTime.format('H')} / ${maxTemp} at ${dailyMaxTime.format('H')}`);
 
-    if (xValues.length) {
-        // TODO...
-        // Using linear regression on this temp data does not appear to be giving
-        // good results, especially when the requested time (hour) is later in the
-        // day. For now, I'm going to manually look at peak hours and try to
-        // determine if this is a typical temp curve day or not.
+    if (moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone).format('YYYY-MM-DD') === simpleDate) {
+        text.push(`It's currently ${Math.round(yValues[0])} degrees.`)
+    }
 
-        let maxHours = moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone);
-        maxHours.add(maxHour, 'h');
-        let minHours = moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone);
-        minHours.add(minHour, 'h');
+    // TODO...
+    // Using linear regression on this temp data does not appear to be giving
+    // good results, especially when the requested time (hour) is later in the
+    // day. For now, I'm going to manually look at peak hours and try to
+    // determine if this is a typical temp curve day or not.
 
-        if (dailyMaxTime.format('H') > 17) {
-            text.push(
-`The temperature is currently ${Math.round(yValues[0])} degrees and {day} it will be climbing
-through the evening, peaking at about ${Math.round(maxTemp)} degrees around ${maxHours.format('h a')}.`
-            );
+    let maxHours = moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone);
+    maxHours.add(maxHour, 'h');
+    let minHours = moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone);
+    minHours.add(minHour, 'h');
 
-            if (xValues[0] < 17) {
-                xValues.forEach(function findSixPM(hour, i) {
-                    if (Number(hour) === 17) {
-                        text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day`);
-                    }
-                });
-            }
-
-        } else if (dailyMaxTime.format('H') < 12) {
-            text.push(
-`The temperature is currently ${Math.round(yValues[0])} degrees, but temps will be heading
-down through {day}, it'll get down to about ${Math.round(minTemp)} degrees at ${minHours.format('h a')}.`
-            );
-
-            if (xValues[0] < 17) {
-                xValues.forEach(function findCommuteTime(hour, i) {
-                    if (Number(hour) === 17) {
-                        text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day`);
-                    }
-                });
-            }
-
-        } else {
-            text.push(
-`It's currently ${Math.round(yValues[0])} degrees outside. You'll see a high of about
+    if (dailyMaxTime.format('H') > 17) {
+        text.push(
+`Temperatures {day} it will be climbing through the evening, peaking at about
 ${Math.round(maxTemp)} degrees around ${maxHours.format('h a')}.`
-            );
+        );
 
-            if (xValues[0] < 17) {
-                xValues.forEach(function findSixPM(hour, i) {
-                    if (Number(hour) === 17) {
-                        text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day`);
-                    }
-                });
-            }
+        if (xValues[0] < 16) {
+            xValues.forEach(function findSixPM(hour, i) {
+                if (Number(hour) === 17) {
+                    text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day.`);
+                }
+            });
         }
+
+    } else if (dailyMaxTime.format('H') < 12) {
+        text.push(
+            `Temperatures will be heading down through {day} getting down to about ${Math.round(minTemp)} degrees by ${minHours.format('h a')}.`
+        );
+
+        if (xValues[0] < 16) {
+            xValues.forEach(function findCommuteTime(hour, i) {
+                if (Number(hour) === 17) {
+                    text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day.`);
+                }
+            });
+        }
+
+    } else if (xValues[0] < 11) {
+        text.push(`You'll see a high of ${Math.round(maxTemp)} degrees {day} around ${maxHours.format('h a')}.`);
+
+        xValues.forEach(function findSixPM(hour, i) {
+            if (Number(hour) === 17) {
+                text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day.`);
+            }
+        });
+    } else if (xValues[0] < 17) {
+        xValues.forEach(function findSixPM(hour, i) {
+            if (Number(hour) === 17) {
+                text.push(`It'll be about ${Math.round(yValues[i])} at the end of the work day`);
+            }
+            if (Number(hour) === 21) {
+                text.push(`and ${Math.round(yValues[i])} by 9 pm.`);
+            }
+        });
+    } else {
+        xValues.forEach(function findSixPM(hour, i) {
+            if (Number(hour) === 23) {
+                text.push(`It'll be ${Math.round(yValues[i])} around 11pm to finish out your day.`);
+            }
+        });
     }
 
     debugOut(text.join(' ').replace(/\n/g, ' '));
