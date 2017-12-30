@@ -105,15 +105,15 @@ describe('Weather core', function() {
             p.then(function(data) {
                 debugOutput('CURRENT', data.currently && data.currently.forecast);
                 debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
-                debugOutput('HOURLY', data.hourByHour && data.hourByHour.forecast);
+                debugOutput('HOURLY', data.detail && data.detail.forecast);
             });
 
             let day = DAYS_OF_WEEK[(new Date(reqDate)).getDay()];
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
-                expect(p).to.eventually.have.property('hourByHour').that.is.null,
+                expect(p).to.eventually.have.property('detail').that.is.null,
                 expect(p).to.eventually.have.property('currently').that.is.null,
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary')
@@ -141,11 +141,11 @@ describe('Weather core', function() {
             p.then(function(data) {
                 debugOutput('CURRENT', data.currently && data.currently.forecast);
                 debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
-                debugOutput('HOURLY', data.hourByHour && data.hourByHour.forecast);
+                debugOutput('HOURLY', data.detail && data.detail.forecast);
             });
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary')
@@ -178,19 +178,19 @@ describe('Weather core', function() {
                 debugOutput(data.date);
                 debugOutput('CURRENT', data.currently && data.currently.forecast);
                 debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
-                debugOutput('HOURLY', data.hourByHour && data.hourByHour.forecast);
+                debugOutput('HOURLY', data.detail && data.detail.forecast);
             });
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
-                expect(p).to.eventually.have.property('hourByHour').that.is.a('object'),
-                expect(p).to.eventually.have.property('hourByHour').that.has.keys('data', 'forecast', 'conditions'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
+                expect(p).to.eventually.have.property('detail').that.is.a('object'),
+                expect(p).to.eventually.have.property('detail').that.has.keys('data', 'forecast', 'conditions'),
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('forecast').that.is.a('string')
                     .and.contains('rain'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('data').that.is.an('array'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('conditions').that.is.an('object')
             ]);
         });
@@ -200,17 +200,17 @@ describe('Weather core', function() {
             let p = weather(Date.now() + 86400000);
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('currently').that.is.null,
-                expect(p).to.eventually.have.property('hourByHour').that.is.an('object'),
-                expect(p).to.eventually.have.property('hourByHour').that.has.keys('data', 'forecast', 'conditions'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail').that.is.an('object'),
+                expect(p).to.eventually.have.property('detail').that.has.keys('data', 'forecast', 'conditions'),
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('forecast').that.is.a('string'),
-                expect(p).to.eventually.have.property('hourByHour').that.has.property('forecast')
+                expect(p).to.eventually.have.property('detail').that.has.property('forecast')
                     .that.is.a('string'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('data').that.is.an('array'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('conditions').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.has.property('forecast').that.is.a('string')
@@ -222,17 +222,17 @@ describe('Weather core', function() {
             let p = weather();
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
-                expect(p).to.eventually.have.property('hourByHour').that.is.an('object'),
-                expect(p).to.eventually.have.property('hourByHour').that.has.keys('data', 'forecast', 'conditions'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail').that.is.an('object'),
+                expect(p).to.eventually.have.property('detail').that.has.keys('data', 'forecast', 'conditions'),
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('forecast').that.is.a('string'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('forecast').that.contains('rain'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('data').that.is.an('array'),
-                expect(p).to.eventually.have.property('hourByHour')
+                expect(p).to.eventually.have.property('detail')
                     .that.has.property('conditions').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.has.property('forecast').that.is.a('string')
@@ -269,7 +269,7 @@ describe('Weather core', function() {
             let p = weather();
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('currently').that.has.property('forecast').that.is.a('string')
                     .that.contains(Math.round(weatherData.currently.temperature) + ' degrees')
@@ -292,7 +292,7 @@ describe('Weather core', function() {
             let p = weather();
 
             return Promise.all([
-                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'hourByHour'),
+                expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('currently').that.has.property('forecast').that.is.a('string')
                     .that.contains(Math.round(weatherData.currently.temperature) + ' degrees')

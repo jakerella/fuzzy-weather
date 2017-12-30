@@ -48,7 +48,7 @@ module.exports = function(options = {}) {
      *                                           date: Date,
      *                                           currently: Object,    // will be `null` if date is not current day
      *                                           dailySummary: Object,
-     *                                           hourByHour: Object    // will be `null` if the date is not within 48 hours
+     *                                           detail: Object        // will be `null` if the date is not within 48 hours
      *                                         }
      *                                       Note that the Object for each section above will always contain:
      *                                         {
@@ -122,7 +122,7 @@ module.exports = function(options = {}) {
                 resolve({
                     currently: getCurrentConditions(o, data, reqDateObj),
                     dailySummary: getDailySummary(o, data, reqDateObj),
-                    hourByHour: getHourByHour(o, data, reqDateObj),
+                    detail: getDetail(o, data, reqDateObj),
                     date: reqDateObj
                 });
             });
@@ -213,7 +213,7 @@ function getDailySummary(o, data, reqDate) {
  * @param  {Date} reqDate  The date of the request
  * @return {Object|null}   The hour-by-hour text of the forecast (null if not today or tomorrow)  { data, conditions, forecast }
  */
-function getHourByHour(o, data, reqDate) {
+function getDetail(o, data, reqDate) {
     let info = {
         data: null,
         conditions: {},
