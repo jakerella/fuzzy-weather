@@ -388,10 +388,19 @@ function getCurrentConditions(o, data, reqDate) {
 
     if (data.alerts && data.alerts.length) {
         let alerts = [];
+        let types = [];
         data.alerts.forEach(function checkAlertTime(alert) {
             if (data.currently.time > alert.time && data.currently.time < alert.expires) {
+                if (types.includes(alert.title)) { return; }
+                types.push(alert.title);
                 let expires = moment.tz(alert.expires * 1000, 'GMT').tz(data.timezone);
-                alerts.push(`${alert.title} until ${expires.format('ha')}`);
+
+                if (alert.title.toLowerCase() === 'special weather statement') {
+                    let description = alert.description.substr(0, alert.description.indexOf('For additional info'));
+                    alerts.push(`until ${expires.format('ha')}: ${description}`);
+                } else {
+                    alerts.push(`${alert.title} until ${expires.format('ha')}`);
+                }
             }
         });
         if (alerts.length > 1) {
