@@ -30,7 +30,7 @@ const OPTIONS = {
     dewPointBreak: 69,
     humidityBreak: 0.70,
     windBreak: 15,
-    cloudBreak: 0.8
+    cloudBreak: 0.65
 };
 
 module.exports = function(options = {}) {
