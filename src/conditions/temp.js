@@ -11,7 +11,7 @@ module.exports = {
     detail: getDetail
 };
 
-function getSummary(timezone, simpleDate, dailyData, hourlyData) {
+function getSummary(timezone, dailyData, hourlyData) {
     let text = [];
 
     if (!dailyData && !hourlyData) {
@@ -48,10 +48,6 @@ function getSummary(timezone, simpleDate, dailyData, hourlyData) {
     });
 
     debug(`max/min: ${minTemp} at ${dailyMinTime.format('H')} / ${maxTemp} at ${dailyMaxTime.format('H')}`);
-
-    if (moment.tz(hourlyData[0].time * 1000, 'GMT').tz(timezone).format('YYYY-MM-DD') === simpleDate) {
-        text.push(`It's currently ${Math.round(yValues[0])} degrees.`)
-    }
 
     // TODO...
     // Using linear regression on this temp data does not appear to be giving

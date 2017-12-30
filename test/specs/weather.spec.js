@@ -155,8 +155,6 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('forecast').that.contains('rain'),
                 expect(p).to.eventually.have.property('dailySummary')
-                    .that.has.property('forecast').that.contains('currently 60 degrees'),
-                expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('forecast').that.contains('75 degrees today around 3 pm'),
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('forecast').that.contains('74 at the end')
