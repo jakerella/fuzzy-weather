@@ -1,5 +1,3 @@
-'use strict';
-
 let nock = require('nock'),
     debugOutput = require('debug')('fuzzy-weather:output'),
     chai = require('chai'),

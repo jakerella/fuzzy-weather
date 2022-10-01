@@ -1,5 +1,3 @@
-'use strict';
-
 let chai = require('chai'),
     rain = require('../../src/conditions/rain'),
     weatherDataGenerate = require('../data/dc.weather');

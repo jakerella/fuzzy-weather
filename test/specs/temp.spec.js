@@ -1,5 +1,3 @@
-'use strict';
-
 let chai = require('chai'),
     temp = require('../../src/conditions/temp'),
     moment = require('moment-timezone'),
