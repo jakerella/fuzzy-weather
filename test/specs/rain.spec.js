@@ -11,7 +11,7 @@ let rainCondition = {
         level: 8
     },
     dailyData = {
-        'time':time,
+        'dt':time,
         'summary':'Partly cloudy until evening.',
         'precipIntensity':0.0003,
         'precipIntensityMax':0.0859,

@@ -8,7 +8,7 @@ now.setHours(12);
 let time = Math.round(now.getTime() / 1000);
 
 let dailyData = {
-        'time':time,
+        'dt':time,
         'summary':'Mostly sunny.',
         'temperatureMin':68.17,
         'temperatureMinTime':1470650400,
@@ -51,12 +51,12 @@ describe('temp module', function() {
 
             let dailyData = {};
             data.daily.data.forEach(function(singleDayData) {
-                if (moment(singleDayData.time * 1000).format('YYYY-MM-DD') === '2018-07-01') {
+                if (moment(singleDayData.dt * 1000).format('YYYY-MM-DD') === '2018-07-01') {
                     dailyData = singleDayData
                     singleDayData.type = 'daily';
                 }
             });
-            let reqDate = moment(dailyData.time * 1000);
+            let reqDate = moment(dailyData.dt * 1000);
             dailyData.temperatureMaxTime = reqDate.hours(14).format('X');
             dailyData.temperatureMinTime = reqDate.hours(3).format('X');
 
@@ -79,12 +79,12 @@ describe('temp module', function() {
 
             let dailyData = {};
             data.daily.data.forEach(function(singleDayData) {
-                if (moment(singleDayData.time * 1000).format('YYYY-MM-DD') === '2018-07-01') {
+                if (moment(singleDayData.dt * 1000).format('YYYY-MM-DD') === '2018-07-01') {
                     dailyData = singleDayData
                     singleDayData.type = 'daily';
                 }
             });
-            let reqDate = moment(dailyData.time * 1000);
+            let reqDate = moment(dailyData.dt * 1000);
             dailyData.temperatureMaxTime = reqDate.hours(8).format('X');
             dailyData.temperatureMinTime = reqDate.hours(23).format('X');
 

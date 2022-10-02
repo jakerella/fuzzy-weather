@@ -85,8 +85,9 @@ describe('Weather core', function() {
 
     describe('getting daily weather data', function() {
         beforeEach(function() {
-            nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
+            nock('api.openweathermap.org')
+                .get('/data/3.0/onecall')
+                .query({ appid: API_KEY, lat: LAT, lon: LNG })
                 .reply(200, generator(locationData, {
                     maxTemp: 75,
                     minTemp: 55,
@@ -163,8 +164,9 @@ describe('Weather core', function() {
 
     describe('getting hourly weather data', function() {
         beforeEach(function() {
-            nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
+            nock('api.openweathermap.org')
+                .get('/data/3.0/onecall')
+                .query({ appid: API_KEY, lat: LAT, lon: LNG })
                 .reply(200, weatherData);
         });
 
@@ -252,15 +254,16 @@ describe('Weather core', function() {
             weatherData.alerts = [
                 {
                     'title': 'Red Flag Warning for Washington, DC',
-                    'time': Math.round(Date.now() / 1000) - (60 * 60),  // start time of the alert
+                    'dt': Math.round(Date.now() / 1000) - (60 * 60),  // start time of the alert
                     'expires': Math.round(Date.now() / 1000) + (60 * 60 * 4),
                     'description': '... EXCESSIVELY LONG DESCRIPTION ...',
                     'uri': 'https://alerts.weather.gov/cap/wwacapget.php?x=[ALERT_ID]'
                 }
             ];
 
-            nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
+            nock('api.openweathermap.org')
+                .get('/data/3.0/onecall')
+                .query({ appid: API_KEY, lat: LAT, lon: LNG })
                 .reply(200, weatherData);
 
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
@@ -282,8 +285,9 @@ describe('Weather core', function() {
         it('should get current conditions for today with nothing going on', function() {
             weatherData.currently = _.clone(origCurrently);
             weatherData.alerts = null;
-            nock('https://api.darksky.net')
-                .get(new RegExp(`forecast/${API_KEY}/${LAT},${LNG}`))
+            nock('api.openweathermap.org')
+                .get('/data/3.0/onecall')
+                .query({ appid: API_KEY, lat: LAT, lon: LNG })
                 .reply(200, weatherData);
 
             let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });

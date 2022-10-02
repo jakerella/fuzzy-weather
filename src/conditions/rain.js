@@ -1,157 +1,148 @@
-'use strict';
-
-let debug = require('debug')('fuzzy-weather:rain'),
+const debug = require('debug')('fuzzy-weather:rain'),
     debugOut = require('debug')('fuzzy-weather:rain:output'),
     moment = require('moment-timezone'),
-    lsq = require('least-squares');
-require('../array-util');
+    lsq = require('least-squares'),
+    sample = require('../util').sample,
+    conditionMap = require('./conditions/condition-codes.json'),
+    rankConditions = require('./rank')
 
 module.exports = {
     headline: getHeadline,
     dailyText: getDailyText,
     hourlyText: getHourlyText
-};
+}
 
 
 function getHeadline() {
-    return [
+    return sample([
         `Don't forget your umbrella {day}!`,
         `Remember the umbrella {day}.`,
         `Prepare for some wet weather {day}.`,
         `It's going to be wet {day}.`,
         `You'll need the umbrella {day}.`
-    ].sample();
+    ])
 }
 
 
 /**
  * Get text for rainy day
- * @param  {Object} condition The condition info: topic: { snow, probability, level }
+ * @param  {Object} condition The condition info
  * @param  {Object} data      The weather data from the API
  * @param  {String} timezone  The timezone for weather data
+ * @param  {String} o         The options used for the original weather call
  * @return {String}           The text to use for rain information given the data provided
  */
-function getDailyText(condition, data, timezone) {
-    debug('getting rain text if prob is up:', data.precipProbability);
-
-    if (data.precipProbability < 0.1) {
-        return '';
-    }
-
-    let peak = moment.tz(data.precipIntensityMaxTime * 1000, 'GMT').tz(timezone);
+function getDailyText(condition, data, timezone, o) {
+    debug('getting rain text for daily')
 
     // TODO:
     // * base text on level
     // * create array of possible phrases
 
-    let output =
-`You should expect ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)} peaking at around ${peak.format('ha')}.
-There is a ${Math.round(data.precipProbability * 100)} percent chance overall.`;
-    debugOut(output);
-    return output;
+    let output = `You should expect ${conditionMap[condition.code].description}. There is a ${Math.round(condition.probability * 100)} percent chance overall.`
+    debugOut(output)
+    return output
 }
 
 
-function getHourlyText(data, timezone) {
-    let text = [];
-    let strongInstances = [];
-    let holdInstance = null;
+function getHourlyText(data, timezone, daily, o) {
+    let text = []
+    let strongInstances = []
+    let holdInstance = null
 
-    let xValues = [];
-    let yValues = [];
+    let xValues = []
+    let yValues = []
 
     data.forEach(function determineInstances(hourData) {
-        let hour = moment.tz(hourData.time * 1000, 'GMT').tz(timezone);
+        let hour = moment.tz(hourData.dt * 1000, 'GMT').tz(timezone)
 
         // Track X and Y values to do linear regression later...
-        if (hourData.precipProbability > 0.05) {
-            xValues.push(hour.hours());
-            yValues.push(hourData.precipProbability);
+        if (hourData.pop > 0.05) {
+            xValues.push(hour.hours())
+            yValues.push(hourData.pop)
         }
 
-        if (hourData.precipType !== 'rain') { return; }
+        const condition = rankConditions(o, hourData, 'rain')[0]
 
-        // Track any "strong" instances through the day...
-        if (hourData.precipProbability > 0.33 && hourData.precipIntensity > 0.03) {
+        // Track good rain chances through the day...
+        if (condition.probablity > 0.4 && condition.level > 2) {
             // there's some rain this hour...
             if (holdInstance === null) {
                 // we need a new rain instance
                 holdInstance = {
-                    startTime: hourData.time,
+                    startTime: hourData.dt,
                     startHour: hour.format('ha'),
-                    startPercent: hourData.precipProbability,
+                    startPercent: condition.probability,
                     length: 1,
-                    maxPrecipProbability: hourData.precipProbability,
-                    maxPrecipProbabilityTime: hourData.time,
+                    maxPrecipProbability: condition.probability,
+                    maxPrecipProbabilityTime: hourData.dt,
                     maxPrecipProbabilityHour: hour.format('ha'),
-                    maxIntensity: hourData.precipIntensity,
-                    maxIntensityTime: hourData.time,
+                    maxIntensity: condition.level,
+                    maxIntensityTime: hourData.dt,
                     maxIntensityHour: hour.format('ha')
-                };
+                }
             } else {
                 // add to existing instance
                 holdInstance.length++;
-                if (hourData.precipIntensity >= holdInstance.maxIntensity) {
-                    holdInstance.maxIntensity = hourData.precipIntensity;
-                    holdInstance.maxIntensityTime = hourData.time;
-                    holdInstance.maxIntensityHour = hour.format('ha');
+                if (condition.level >= holdInstance.maxIntensity) {
+                    holdInstance.maxIntensity = condition.level
+                    holdInstance.maxIntensityTime = hourData.dt
+                    holdInstance.maxIntensityHour = hour.format('ha')
                 }
-                if (hourData.precipProbability >= holdInstance.maxPrecipProbability) {
-                    holdInstance.maxPrecipProbability = hourData.precipProbability;
-                    holdInstance.maxPrecipProbabilityTime = hourData.time;
-                    holdInstance.maxPrecipProbabilityHour = hour.format('ha');
+                if (condition.probability >= holdInstance.maxPrecipProbability) {
+                    holdInstance.maxPrecipProbability = condition.probability
+                    holdInstance.maxPrecipProbabilityTime = hourData.dt
+                    holdInstance.maxPrecipProbabilityHour = hour.format('ha')
                 }
             }
         } else if (holdInstance) {
             // No rain this hour, but we have a previous rain instance!
-            strongInstances.push(holdInstance);
-            holdInstance = null;
+            strongInstances.push(holdInstance)
+            holdInstance = null
         }
-    });
+    })
 
     if (holdInstance) {
         // leftover strong instance at the end of the day?
-        strongInstances.push(holdInstance);
-        holdInstance = null;
+        strongInstances.push(holdInstance)
+        holdInstance = null
     }
 
     if (xValues.length) {
         // Use linear regression (least squares) to determine if rain
         // chances increase or decrease through the day. Check the fit of the
         // line to ensure correlation is strong enough in either direction
-        let regrData = {};
-        let regr = lsq(xValues, yValues, true, regrData);
-        let xMin = xValues[0];
-        let xMax = xValues[xValues.length-1];
-        debug(regr(xMin), regr(xMax), regrData);
+        let regrData = {}
+        let regr = lsq(xValues, yValues, true, regrData)
+        let xMin = xValues[0]
+        let xMax = xValues[xValues.length-1]
+        debug(regr(xMin), regr(xMax), regrData)
         if (regrData.bErr < 0.05 && regrData.mErr < 0.005) {
             if (regr(xMin) < regr(xMax) && (regr(xMax) - regr(xMin)) > 0.4) {
-                text.push('There is an increasing rain chance through {day}.');
+                text.push('There is an increasing rain chance through {day}.')
             } else if (regr(xMin) > regr(xMax) && (regr(xMin) - regr(xMax)) > 0.4) {
-                text.push('Rain chances decrease through {day}.');
+                text.push('Rain chances decrease through {day}.')
             } else if (Math.abs(regr(xMin) - regr(xMax)) < 0.3) {
-                let hours = moment.tz(data[0].time * 1000, 'GMT').tz(timezone);
-                hours.add(xValues[xMin], 'h');
-                let evenText = `Chances for rain are pretty steady from about ${hours.format('ha')} through`;
-                hours.add(xValues.length, 'h');
-                evenText += ` ${hours.format('ha')}.`;
+                let hours = moment.tz(data[0].dt * 1000, 'GMT').tz(timezone)
+                hours.add(xValues[xMin], 'h')
+                let evenText = `Chances for rain are pretty steady from about ${hours.format('ha')} through`
+                hours.add(xValues.length, 'h')
+                evenText += ` ${hours.format('ha')}.`
                 text.push(evenText);
             }
         }
     }
 
     if (strongInstances.length) {
-        debug('strong rain instances', strongInstances);
+        debug('strong rain instances', strongInstances)
 
         if (strongInstances.length > 1) {
-            text.push(`It looks like there will be multiple rain chances {day}.`);
+            text.push(`It looks like there will be multiple rain chances {day}.`)
         }
 
-        let holdMaxIntensity = null;
+        let holdMaxIntensity = null
         strongInstances.forEach(function addInstance(instance, i) {
-            let description;
-
-            // ${getPrecipIntensityText(data.precipIntensityMax, data.precipType)}
+            let description
 
             if (i > 0) {
                 description =
@@ -180,26 +171,9 @@ ${instance.maxPrecipProbabilityHour}.`;
             }
             text.push(description);
         });
-        text.push(`The heaviest bit should be around ${holdMaxIntensity.hour}.`);
+        text.push(`The heaviest rain should be around ${holdMaxIntensity.hour}.`);
     }
 
     debugOut(text.join(' ').replace(/\s{2,}/g, ' '));
     return text.join(' ').replace(/\s{2,}/g, ' ');
-}
-
-
-function getPrecipIntensityText(intensity, type) {
-    let intensityText = 'no';
-    if (intensity > 0.7) {
-        intensityText = 'extremely heavy';
-    } else if (intensity > 0.2) {
-        intensityText = 'heavy';
-    } else if (intensity > 0.07) {
-        intensityText = 'moderate';
-    } else if (intensity > 0.01) {
-        intensityText = 'light';
-    } else if (intensity > 0) {
-        intensityText = 'drizzling';
-    }
-    return intensityText + ' ' + type;
 }

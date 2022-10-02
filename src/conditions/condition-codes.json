@@ -1,0 +1,83 @@
+{
+  "200": { "code": 200, "level": 6, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm with light rain"},
+  "201": { "code": 201, "level": 7, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm with rain"},
+  "202": { "code": 202, "level": 8, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm with heavy rain"},
+  "210": { "code": 210, "level": 4, "category": "rain", "subcategory": "thunderstorm", "description": "light thunderstorm"},
+  "211": { "code": 211, "level": 6, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm"},
+  "212": { "code": 212, "level": 9, "category": "rain", "subcategory": "thunderstorm", "description": "heavy thunderstorm"},
+  "221": { "code": 221, "level": 7, "category": "rain", "subcategory": "thunderstorm", "description": "ragged thunderstorm"},
+  "230": { "code": 230, "level": 6, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm with light drizzle"},
+  "231": { "code": 231, "level": 6, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm with drizzle"},
+  "232": { "code": 232, "level": 7, "category": "rain", "subcategory": "thunderstorm", "description": "thunderstorm with heavy drizzle"},
+  
+  "300": { "code": 300, "level": 2, "category": "rain", "subcategory": "drizzle", "description": "light drizzle"},
+  "301": { "code": 301, "level": 2, "category": "rain", "subcategory": "drizzle", "description": "drizzle"},
+  "302": { "code": 302, "level": 3, "category": "rain", "subcategory": "drizzle", "description": "heavy drizzle"},
+  "310": { "code": 310, "level": 2, "category": "rain", "subcategory": "drizzle", "description": "light drizzle rain"},
+  "311": { "code": 311, "level": 4, "category": "rain", "subcategory": "drizzle", "description": "drizzle rain"},
+  "312": { "code": 312, "level": 4, "category": "rain", "subcategory": "drizzle", "description": "heavy drizzly rain"},
+  "313": { "code": 313, "level": 5, "category": "rain", "subcategory": "shower", "description": "shower rain and drizzle"},
+  "314": { "code": 314, "level": 6, "category": "rain", "subcategory": "shower", "description": "heavy shower rain and drizzle"},
+  "321": { "code": 321, "level": 4, "category": "rain", "subcategory": "drizzle", "description": "shower drizzle"},
+  
+  "500": { "code": 500, "level": 3, "category": "rain", "subcategory": "", "description": "light rain"},
+  "501": { "code": 501, "level": 5, "category": "rain", "subcategory": "", "description": "moderate rain"},
+  "502": { "code": 502, "level": 7, "category": "rain", "subcategory": "", "description": "heavy intensity rain"},
+  "503": { "code": 503, "level": 9, "category": "rain", "subcategory": "", "description": "very heavy rain"},
+  "504": { "code": 504, "level": 10, "category": "rain", "subcategory": "", "description": "extreme rain"},
+
+  "511": { "code": 511, "level": 7, "category": "snow", "subcategory": "sleet", "description": "freezing rain"},
+
+  "520": { "code": 520, "level": 3, "category": "rain", "subcategory": "shower", "description": "light intensity shower rain"},
+  "521": { "code": 521, "level": 4, "category": "rain", "subcategory": "shower", "description": "shower rain"},
+  "522": { "code": 522, "level": 6, "category": "rain", "subcategory": "shower", "description": "heavy intensity shower rain"},
+  "531": { "code": 531, "level": 6, "category": "rain", "subcategory": "shower", "description": "ragged shower rain"},
+
+  "600": { "code": 600, "level": 3, "category": "snow", "subcategory": "", "description": "light snow"},
+  "601": { "code": 601, "level": 5, "category": "snow", "subcategory": "", "description": "snow"},
+  "602": { "code": 602, "level": 7, "category": "snow", "subcategory": "", "description": "Heavy snow"},
+  
+  "611": { "code": 611, "level": 7, "category": "snow", "subcategory": "sleet", "description": "Sleet"},
+  "612": { "code": 612, "level": 6, "category": "snow", "subcategory": "sleet", "description": "Light shower sleet"},
+  "613": { "code": 613, "level": 6, "category": "snow", "subcategory": "sleet", "description": "Shower sleet"},
+
+  "615": { "code": 615, "level": 4, "category": "snow", "subcategory": "slushy mix", "description": "Light rain and snow"},
+  "616": { "code": 616, "level": 6, "category": "snow", "subcategory": "slushy mix", "description": "rain and snow"},
+  "620": { "code": 620, "level": 4, "category": "snow", "subcategory": "", "description": "Light shower snow"},
+  "621": { "code": 621, "level": 5, "category": "snow", "subcategory": "", "description": "Shower snow"},
+  "622": { "code": 622, "level": 6, "category": "snow", "subcategory": "", "description": "Heavy shower snow"},
+
+  "701": { "code": 701, "level": 2, "category": "rain", "subcategory": "", "description": "mist"},
+  "711": { "code": 711, "level": 5, "category": "atmosphere", "subcategory": "", "description": "smoke"},
+  "721": { "code": 721, "level": 3, "category": "atmosphere", "subcategory": "", "description": "haze"},
+  "731": { "code": 731, "level": 5, "category": "extreme", "subcategory": "", "description": "sand and dust whirls"},
+  "741": { "code": 741, "level": 2, "category": "rain", "subcategory": "", "description": "fog"},
+  "751": { "code": 751, "level": 4, "category": "atmosphere", "subcategory": "", "description": "sand"},
+  "761": { "code": 761, "level": 4, "category": "atmosphere", "subcategory": "", "description": "dust"},
+  "762": { "code": 762, "level": 7, "category": "extreme", "subcategory": "", "description": "volcanic ash"},
+  "771": { "code": 771, "level": 8, "category": "extreme", "subcategory": "", "description": "squalls"},
+  "781": { "code": 781, "level": 10, "category": "extreme", "subcategory": "", "description": "tornado"},
+  
+  "800": { "code": 800, "level": 0, "category": "clear", "subcategory": "", "description": "clear sky"},
+  
+  "801": { "code": 801, "level": 1, "category": "clouds", "subcategory": "", "description": "few clouds: 11-25%"},
+  "802": { "code": 802, "level": 2, "category": "clouds", "subcategory": "", "description": "scattered clouds: 25-50%"},
+  "803": { "code": 803, "level": 3, "category": "clouds", "subcategory": "", "description": "broken clouds: 51-84%"},
+  "804": { "code": 804, "level": 4, "category": "clouds", "subcategory": "", "description": "overcast clouds: 85-100%"},
+
+  "9010": { "code": 9010, "level": 2, "category": "temperature", "subcategory": "heat", "description": "high heat"},
+  "9011": { "code": 9011, "level": 5, "category": "temperature", "subcategory": "heat", "description": "extreme heat"},
+  "9012": { "code": 9012, "level": 2, "category": "temperature", "subcategory": "heat", "description": "hot and humid"},
+  
+  "9015": { "code": 9015, "level": 2, "category": "temperature", "subcategory": "cold", "description": "very cold"},
+  "9016": { "code": 9016, "level": 5, "category": "temperature", "subcategory": "cold", "description": "extreme cold"},
+  "9017": { "code": 9017, "level": 3, "category": "temperature", "subcategory": "cold", "description": "frigid night"},
+  
+  "9020": { "code": 9020, "level": 0, "category": "atmosphere", "subcategory": "", "description": "full moon"},
+  "9021": { "code": 9021, "level": 1, "category": "atmosphere", "subcategory": "", "description": "new moon"},
+  
+  "9030": { "code": 9030, "level": 1, "category": "wind", "subcategory": "", "description": "light breeze"},
+  "9031": { "code": 9031, "level": 3, "category": "wind", "subcategory": "", "description": "windy"},
+  "9032": { "code": 9032, "level": 5, "category": "wind", "subcategory": "", "description": "gusty"},
+  "9033": { "code": 9033, "level": 6, "category": "wind", "subcategory": "", "description": "heavy winds"}
+}
