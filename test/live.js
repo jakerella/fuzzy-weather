@@ -1,4 +1,6 @@
 
+let day = new Date(process.argv[2] || Date.now())
+
 let weather = require('../src/weather')({
     apiKey: process.env.WEATHER_API_KEY,
     location: {
@@ -7,4 +9,4 @@ let weather = require('../src/weather')({
     }
 })
 
-weather().then((data) => console.log(data)).catch(console.error)
+weather(day).then((data) => console.log(data)).catch(console.error)
