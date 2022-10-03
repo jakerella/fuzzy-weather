@@ -1,5 +1,5 @@
-let nock = require('nock'),
-    debugOutput = require('debug')('fuzzy-weather:output'),
+const nock = require('nock'),
+    debug = require('debug')('fuzzy-weather:weather-spec'),
     chai = require('chai'),
     chaiPromise = require('chai-as-promised'),
     _ = require('lodash'),
@@ -9,105 +9,105 @@ let nock = require('nock'),
         maxTemp: 75,
         minTemp: 55,
         heatIndexPercent: 0.05,
-        conditions: [ { type: 'rain', length: 5, delay: 1 } ]
+        conditions: [ { type: 'rain', length: 5, delay: 1, maxProb: 0.6, maxLevel: 1 } ]
     }),
-    origCurrently = _.clone(weatherData.currently);
+    origCurrent = _.clone(weatherData.current)
 
-chai.use(chaiPromise);
-chai.should();
-let expect = chai.expect;
+chai.use(chaiPromise)
+chai.should()
+let expect = chai.expect
 
-const API_KEY = '1234567890';
-const LAT = 38.9649734;
-const LNG = -77.0207249;
-const TZ = 'America/New_York';
-const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const API_KEY = '1234567890'
+const LAT = 38.9649734
+const LNG = -77.0207249
+const TZ = 'America/New_York'
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 const locationData = {
     'latitude': LAT,
     'longitude': LNG,
     'timezone': TZ,
     'offset': ((new Date()).getTimezoneOffset() / 60) * -1
-};
-const generatedReqDate = new Date();
-generatedReqDate.setHours(7);
+}
+const generatedReqDate = new Date()
+generatedReqDate.setHours(7)
 
 describe('Weather core', function() {
 
     afterEach(function() {
-        weatherData.currently = origCurrently;
-        weatherData.alerts = null;
-    });
+        weatherData.current = origCurrent
+        weatherData.alerts = null
+    })
 
     describe('options check', function() {
         it ('should return a promise', function() {
-            let p = weatherInit()();
-            expect(p).to.be.a('promise');
-            expect(p).to.eventually.be.rejectedWith(Error);
-        });
+            let p = weatherInit()()
+            expect(p).to.be.a('promise')
+            expect(p).to.eventually.be.rejectedWith(Error)
+        })
 
         it('should reject with no API key', function() {
             return expect(weatherInit()()).to.eventually.be.rejectedWith(Error)
-                    .and.have.property('message').that.contains('API key');
-        });
+                    .and.have.property('message').that.contains('API key')
+        })
 
         it('should reject with no lattitude', function() {
-            let weather = weatherInit({ apiKey: '1234567890', location: { lng: 42 } });
+            let weather = weatherInit({ apiKey: '1234567890', location: { lng: 42 } })
             return expect(weather()).to.eventually.be.rejectedWith(Error)
-                    .and.have.property('message').that.contains('attitude');
-        });
+                    .and.have.property('message').that.contains('attitude')
+        })
 
         it('should reject with no longitude', function() {
-            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13 } });
+            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13 } })
             return expect(weather()).to.eventually.be.rejectedWith(Error)
-                    .and.have.property('message').that.contains('ongitude');
-        });
+                    .and.have.property('message').that.contains('ongitude')
+        })
 
         it('should reject with invalid date', function() {
-            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13, lng: 42 } });
+            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13, lng: 42 } })
             return expect(weather('asdfghjkl')).to.eventually.be.rejectedWith(Error)
-                    .and.have.property('message').that.contains('valid date');
-        });
+                    .and.have.property('message').that.contains('valid date')
+        })
 
         it('should reject with date in the past', function() {
-            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13, lng: 42 } });
+            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13, lng: 42 } })
             return expect(weather('1/1/2000')).to.eventually.be.rejectedWith(Error)
-                    .and.have.property('message').that.contains('past');
-        });
+                    .and.have.property('message').that.contains('past')
+        })
 
         it('should reject with date beyond 7 days', function() {
-            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13, lng: 42 } });
-            let futureTime = Date.now() + (8 * 86400000);
+            let weather = weatherInit({ apiKey: '1234567890', location: { lat: -13, lng: 42 } })
+            let futureTime = Date.now() + (8 * 86400000)
             return expect(weather(futureTime)).to.eventually.be.rejectedWith(Error)
-                    .and.have.property('message').that.contains('7 days');
-        });
-    });
+                    .and.have.property('message').that.contains('7 days')
+        })
+    })
 
     describe('getting daily weather data', function() {
         beforeEach(function() {
-            nock('api.openweathermap.org')
+            const generatedData = generator(locationData, {
+                maxTemp: 75,
+                minTemp: 55,
+                heatIndexPercent: 0.05,
+                conditions: [ { type: 'rain', length: 5, delay: 1, maxProb: 0.6, maxLevel: 1 } ]
+            }, generatedReqDate.getTime())
+            
+            nock('https://api.openweathermap.org')
                 .get('/data/3.0/onecall')
-                .query({ appid: API_KEY, lat: LAT, lon: LNG })
-                .reply(200, generator(locationData, {
-                    maxTemp: 75,
-                    minTemp: 55,
-                    heatIndexPercent: 0.05,
-                    conditions: [ { type: 'rain', length: 5, delay: 1 } ]
-                }, generatedReqDate.getTime()));
-        });
+                .query({ appid: API_KEY, lat: LAT, lon: LNG, units: 'imperial' })
+                .reply(200, generatedData)
+        })
 
         it('should resolve with correct data properties given valid options', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let reqDate = generatedReqDate.getTime() + (2 * 86400000);
-            let p = weather(reqDate);
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
+            let reqDate = generatedReqDate.getTime() + (2 * 86400000)
+            let p = weather(reqDate)
 
             p.then(function(data) {
-                debugOutput('CURRENT', data.currently && data.currently.forecast);
-                debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
-                debugOutput('HOURLY', data.detail && data.detail.forecast);
-            });
+                debug(data)
+            })
 
-            let day = DAYS_OF_WEEK[(new Date(reqDate)).getDay()];
+            let day = DAYS_OF_WEEK[(new Date(reqDate)).getDay()]
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
@@ -122,26 +122,22 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('forecast').that.contains('light rain'),
                 expect(p).to.eventually.have.property('dailySummary')
-                    .that.has.property('forecast').that.contains('47 percent'),
-                expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('data').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('conditions').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('conditions').that.is.an('object').that.has.property('rain')
-            ]);
-        });
+            ])
+        })
 
         it('should resolve with correct temp data given date of today', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
 
-            let p = weather(generatedReqDate.getTime());
+            let p = weather(generatedReqDate.getTime())
 
             p.then(function(data) {
-                debugOutput('CURRENT', data.currently && data.currently.forecast);
-                debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
-                debugOutput('HOURLY', data.detail && data.detail.forecast);
-            });
+                debug(data)
+            })
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
@@ -157,29 +153,26 @@ describe('Weather core', function() {
                     .that.has.property('forecast').that.contains('75 degrees today around 3 pm'),
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('forecast').that.contains('74 at the end')
-            ]);
-        });
+            ])
+        })
 
-    });
+    })
 
     describe('getting hourly weather data', function() {
         beforeEach(function() {
-            nock('api.openweathermap.org')
+            nock('https://api.openweathermap.org')
                 .get('/data/3.0/onecall')
-                .query({ appid: API_KEY, lat: LAT, lon: LNG })
-                .reply(200, weatherData);
-        });
+                .query({ appid: API_KEY, lat: LAT, lon: LNG, units: 'imperial' })
+                .reply(200, weatherData)
+        })
 
         it('should get an hour by hour summary type given a date of today', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let p = weather(Date.now());
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
+            let p = weather(Date.now())
 
             p.then(function(data) {
-                debugOutput(data.date);
-                debugOutput('CURRENT', data.currently && data.currently.forecast);
-                debugOutput('DAILY', data.dailySummary && data.dailySummary.forecast);
-                debugOutput('HOURLY', data.detail && data.detail.forecast);
-            });
+                debug(data)
+            })
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
@@ -187,17 +180,21 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('detail').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('detail')
                     .that.has.property('forecast').that.is.a('string')
-                    .and.contains('rain'),
+                    .and.has.property('length').that.is.greaterThan(0),
                 expect(p).to.eventually.have.property('detail')
                     .that.has.property('data').that.is.an('array'),
                 expect(p).to.eventually.have.property('detail')
                     .that.has.property('conditions').that.is.an('object')
-            ]);
-        });
+            ])
+        })
 
         it('should get an hour by hour summary type given a date of tomorrow', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let p = weather(Date.now() + 86400000);
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
+            let p = weather(Date.now() + 86400000)
+
+            p.then(function(data) {
+                debug(data)
+            })
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
@@ -214,12 +211,16 @@ describe('Weather core', function() {
                     .that.has.property('conditions').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.has.property('forecast').that.is.a('string')
-            ]);
-        });
+            ])
+        })
 
         it('should get an hour by hour summary type given NO date', function() {
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let p = weather();
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
+            let p = weather()
+
+            p.then(function(data) {
+                debug(data)
+            })
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
@@ -227,30 +228,28 @@ describe('Weather core', function() {
                 expect(p).to.eventually.have.property('detail').that.is.an('object'),
                 expect(p).to.eventually.have.property('detail').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('detail')
-                    .that.has.property('forecast').that.is.a('string'),
-                expect(p).to.eventually.have.property('detail')
-                    .that.has.property('forecast').that.contains('rain'),
+                    .that.has.property('forecast').that.is.a('string')
+                    .and.has.property('length').that.is.greaterThan(0),
                 expect(p).to.eventually.have.property('detail')
                     .that.has.property('data').that.is.an('array'),
                 expect(p).to.eventually.have.property('detail')
                     .that.has.property('conditions').that.is.an('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary').that.has.property('forecast').that.is.a('string')
-            ]);
-        });
+            ])
+        })
 
-    });
+    })
 
     describe('getting current weather data', function() {
         it('should get current conditions for today with all sorts of activity', function() {
-            weatherData.currently = _.clone(weatherData.currently);
-            weatherData.currently.apparentTemperature = weatherData.currently.temperature + 6;
-            weatherData.currently.precipType = 'rain';
-            weatherData.currently.precipIntensity = 0.18;
-            weatherData.currently.precipProbability = 0.9;
-            weatherData.currently.humidity = 0.75;
-            weatherData.currently.dewPoint = 75;
-            weatherData.currently.windSpeed = 19.76;
+            weatherData.current = _.clone(weatherData.current)
+            weatherData.current.feeld_like = weatherData.current.temp + 6
+            weatherData.current.rain = { '1h': 1.2 }
+            weatherData.current.pop = 0.9
+            weatherData.current.humidity = 75
+            weatherData.current.dew_point = 75
+            weatherData.current.wind_speed = 19.76
             weatherData.alerts = [
                 {
                     'title': 'Red Flag Warning for Washington, DC',
@@ -259,52 +258,55 @@ describe('Weather core', function() {
                     'description': '... EXCESSIVELY LONG DESCRIPTION ...',
                     'uri': 'https://alerts.weather.gov/cap/wwacapget.php?x=[ALERT_ID]'
                 }
-            ];
+            ]
 
-            nock('api.openweathermap.org')
+            nock('https://api.openweathermap.org')
                 .get('/data/3.0/onecall')
-                .query({ appid: API_KEY, lat: LAT, lon: LNG })
-                .reply(200, weatherData);
+                .query({ appid: API_KEY, lat: LAT, lon: LNG, units: 'imperial' })
+                .reply(200, weatherData)
 
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let p = weather();
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
+            let p = weather()
+
+            p.then(function(data) {
+                debug(data)
+            })
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('currently').that.has.property('forecast').that.is.a('string')
-                    .that.contains(Math.round(weatherData.currently.temperature) + ' degrees')
-                    .and.contains('feels like ' + Math.round(weatherData.currently.apparentTemperature))
-                    .and.contains('75 percent humidity')
-                    .and.contains('moderate rain')
-                    .and.contains('wind').and.contains('20 miles per hour')
-                    .and.contains('weather alert').and.contains('Red Flag')
-            ]);
-        });
+                    .that.contains(Math.round(weatherData.current.temp) + ' degrees')
+            ])
+        })
 
         it('should get current conditions for today with nothing going on', function() {
-            weatherData.currently = _.clone(origCurrently);
-            weatherData.alerts = null;
-            nock('api.openweathermap.org')
+            weatherData.current = _.clone(origCurrent)
+            weatherData.alerts = null
+            nock('https://api.openweathermap.org')
                 .get('/data/3.0/onecall')
-                .query({ appid: API_KEY, lat: LAT, lon: LNG })
-                .reply(200, weatherData);
+                .query({ appid: API_KEY, lat: LAT, lon: LNG, units: 'imperial' })
+                .reply(200, weatherData)
 
-            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } });
-            let p = weather();
+            let weather = weatherInit({ apiKey: API_KEY, location: { lat: LAT, lng: LNG } })
+            let p = weather()
+
+            p.then(function(data) {
+                debug(data)
+            })
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
                 expect(p).to.eventually.have.property('currently').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('currently').that.has.property('forecast').that.is.a('string')
-                    .that.contains(Math.round(weatherData.currently.temperature) + ' degrees')
+                    .that.contains(Math.round(weatherData.current.temp) + ' degrees')
                     .and.to.not.contain('rain')
                     .and.to.not.contain('humidity')
                     .and.to.not.contain('feels like')
                     .and.to.not.contain('wind')
                     .and.to.not.contain('alert')
-            ]);
-        });
-    });
+            ])
+        })
+    })
 
-});
+})

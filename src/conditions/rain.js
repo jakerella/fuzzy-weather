@@ -3,8 +3,8 @@ const debug = require('debug')('fuzzy-weather:rain'),
     moment = require('moment-timezone'),
     lsq = require('least-squares'),
     sample = require('../util').sample,
-    conditionMap = require('./conditions/condition-codes.json'),
-    rankConditions = require('./rank')
+    conditionMap = require('./condition-codes.json'),
+    rankConditions = require('./rank').rankConditions
 
 module.exports = {
     headline: getHeadline,
@@ -33,7 +33,16 @@ function getHeadline() {
  * @return {String}           The text to use for rain information given the data provided
  */
 function getDailyText(condition, data, timezone, o) {
-    debug('getting rain text for daily')
+    debug('getting rain text for daily:', condition)
+
+    if (!condition || !condition.code) {
+        return ''
+    }
+
+    if (!conditionMap[condition.code]) {
+        debug('Unable to find code in condition map:', condition)
+        return ''
+    }
 
     // TODO:
     // * base text on level
@@ -53,7 +62,7 @@ function getHourlyText(data, timezone, daily, o) {
     let xValues = []
     let yValues = []
 
-    data.forEach(function determineInstances(hourData) {
+    data.forEach((hourData) => {
         let hour = moment.tz(hourData.dt * 1000, 'GMT').tz(timezone)
 
         // Track X and Y values to do linear regression later...
@@ -63,9 +72,13 @@ function getHourlyText(data, timezone, daily, o) {
         }
 
         const condition = rankConditions(o, hourData, 'rain')[0]
+        if (!condition || condition.topic !== 'rain') {
+            debug('no rain condition at this hour', hourData.dt, hourData.rain, hourData.pop)
+            return
+        }
 
         // Track good rain chances through the day...
-        if (condition.probablity > 0.4 && condition.level > 2) {
+        if (condition.probability > 0.3 && condition.level > 1) {
             // there's some rain this hour...
             if (holdInstance === null) {
                 // we need a new rain instance
@@ -83,7 +96,7 @@ function getHourlyText(data, timezone, daily, o) {
                 }
             } else {
                 // add to existing instance
-                holdInstance.length++;
+                holdInstance.length++ 
                 if (condition.level >= holdInstance.maxIntensity) {
                     holdInstance.maxIntensity = condition.level
                     holdInstance.maxIntensityTime = hourData.dt
@@ -128,7 +141,7 @@ function getHourlyText(data, timezone, daily, o) {
                 let evenText = `Chances for rain are pretty steady from about ${hours.format('ha')} through`
                 hours.add(xValues.length, 'h')
                 evenText += ` ${hours.format('ha')}.`
-                text.push(evenText);
+                text.push(evenText)
             }
         }
     }
@@ -148,32 +161,32 @@ function getHourlyText(data, timezone, daily, o) {
                 description =
 `There's another chance beginning about ${instance.startHour}
 peaking at ${instance.maxPrecipProbabilityHour} with a
-${Math.round(instance.maxPrecipProbability * 100)} percent chance.`;
+${Math.round(instance.maxPrecipProbability * 100)} percent chance.`
             } else {
                 description =
 `Chances are good for rain starting about ${instance.startHour} with a
-${Math.round(instance.startPercent * 100)} percent chance`;
+${Math.round(instance.startPercent * 100)} percent chance`
                 if (instance.startHour === instance.maxPrecipProbabilityHour ||
                     instance.startPercent === instance.maxPrecipProbability) {
-                    description += '.';
+                    description += '.'
                 } else {
                     description +=
 ` rising to
 ${Math.round(instance.maxPrecipProbability * 100)} percent at
-${instance.maxPrecipProbabilityHour}.`;
+${instance.maxPrecipProbabilityHour}.`
                 }
             }
             if (!holdMaxIntensity || instance.maxIntensity > holdMaxIntensity.value) {
                 holdMaxIntensity = {
                     value: instance.maxIntensity,
                     hour: instance.maxIntensityHour
-                };
+                }
             }
-            text.push(description);
-        });
-        text.push(`The heaviest rain should be around ${holdMaxIntensity.hour}.`);
+            text.push(description)
+        })
+        text.push(`The heaviest rain should be around ${holdMaxIntensity.hour}.`)
     }
 
-    debugOut(text.join(' ').replace(/\s{2,}/g, ' '));
-    return text.join(' ').replace(/\s{2,}/g, ' ');
+    debugOut(text.join(' ').replace(/\s{2,}/g, ' '))
+    return text.join(' ').replace(/\s{2,}/g, ' ')
 }

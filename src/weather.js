@@ -7,7 +7,7 @@ const debug = require('debug')('fuzzy-weather'),
     moment = require('moment-timezone'),
     tempModule = require('./conditions/temperature'),
     conditionMap = require('./conditions/condition-codes.json'),
-    rankConditions = require('./conditions/rank')
+    rankConditions = require('./conditions/rank').rankConditions
 
 const OPTIONS = {
     apiKey: null,
@@ -121,6 +121,8 @@ module.exports = function(options = {}) {
                     debug('Invalid JSON data from weather API:', body)
                     return reject(new Error('The API did not return valid data.'))
                 }
+
+                debug('Got raw data from API with %d hourly entries and %d daily entries', data.hourly.length, data.daily.length)
 
                 resolve({
                     currently: getCurrentConditions(o, data, reqDateObj),
@@ -318,7 +320,6 @@ function getHourByHourData(data, reqDate) {
 function getCurrentConditions(o, data, reqDate) {
     let simpleDate = moment(reqDate).format('YYYY-MM-DD')
     let todaySimple = moment(Date.now()).format('YYYY-MM-DD')
-    let avgTemps = o.avgTemps[(new Date(data.current.dt * 1000)).getMonth()]
 
     let text = []
     let info = {
@@ -327,7 +328,10 @@ function getCurrentConditions(o, data, reqDate) {
         forecast: null
     };
 
-    if (simpleDate !== todaySimple) { return null }
+    if (simpleDate !== todaySimple) {
+        debugCurrently(`forecast was not requested for today (${simpleDate} != ${todaySimple})`)
+        return null
+    }
 
     debugCurrently(`getting current conditions for ${simpleDate}`)
 
@@ -392,7 +396,7 @@ function getCurrentConditions(o, data, reqDate) {
     }
 
     info.forecast = text.join(' ').replace(/\n/g, ' ')
-    debugCurrently(info.forecast)
+    debugCurrently('forecast for current weather:', info.forecast)
     return info
 }
 
