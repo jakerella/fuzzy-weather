@@ -3,7 +3,7 @@ const debug = require('debug')('fuzzy-weather'),
     debugHourly = require('debug')('fuzzy-weather:hourly'),
     debugDaily = require('debug')('fuzzy-weather:daily'),
     _ = require('lodash'),
-    request = require('request'),
+    fetch = require('node-fetch'),
     moment = require('moment-timezone'),
     tempModule = require('./conditions/temperature'),
     conditionMap = require('./conditions/condition-codes.json'),
@@ -32,7 +32,8 @@ const OPTIONS = {
     cloudBreak: 0.65,
     highTempBreak: 95,
     lowTempBreak: 32,
-    nightTempBreak: 15
+    nightTempBreak: 15,
+    __dataOverride: null   // @TODO: implement me
 }
 
 module.exports = function(options = {}) {
@@ -62,7 +63,7 @@ module.exports = function(options = {}) {
      *                                       May also reject with an {Error}
      */
     function getWeatherForDate(requestedDate) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             debug('Getting weather for %s', requestedDate)
 
             if (!o.apiKey) {
@@ -98,38 +99,30 @@ module.exports = function(options = {}) {
                 return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`))
             }
 
-            request({
-                url: `https://api.openweathermap.org/data/3.0/onecall?appid=${o.apiKey}&units=imperial&lat=${o.location.lat}&lon=${o.location.lng}`
-            }, function(err, res, body) {
-                if (err) {
-                    debug('Error from API call', err)
-                    if (!(err instanceof Error)) {
-                        err = new Error(''+err)
-                    }
-                    return reject(err)
-                } else if (res.statusCode > 299) {
-                    debug('Non-200 status code from weather API:', res.statusCode, body)
-                    return reject(
-                        new Error(`There was a problem getting weather data: received non-200 status code (${res.statusCode})`)
-                    )
-                }
+            const resp = await fetch(
+                `https://api.openweathermap.org/data/3.0/onecall?appid=${o.apiKey}&units=imperial&lat=${o.location.lat}&lon=${o.location.lng}`
+            )
+            if (!resp.ok) {
+                const data = await resp.text()
+                debug('Non-2XX status code from weather API:', resp.status, data)
+                return reject(new Error(`There was a problem getting weather data (${resp.status})`))
+            }
 
-                let data
-                try {
-                    data = JSON.parse(body)
-                } catch(e) {
-                    debug('Invalid JSON data from weather API:', body)
-                    return reject(new Error('The API did not return valid data.'))
-                }
+            let data
+            try {
+                data = await resp.json()
+            } catch (err) {
+                debug('Invalid JSON data from weather API:', err)
+                return reject(new Error(`The API did not return valid data: ${err.message}`))
+            }
 
-                debug('Got raw data from API with %d hourly entries and %d daily entries', data.hourly.length, data.daily.length)
+            debug('Got raw data from API with %d hourly entries and %d daily entries', data.hourly.length, data.daily.length)
 
-                resolve({
-                    currently: getCurrentConditions(o, data, reqDateObj),
-                    dailySummary: getDailySummary(o, data, reqDateObj),
-                    detail: getDetail(o, data, reqDateObj),
-                    date: reqDateObj
-                })
+            resolve({
+                currently: getCurrentConditions(o, data, reqDateObj),
+                dailySummary: getDailySummary(o, data, reqDateObj),
+                detail: getDetail(o, data, reqDateObj),
+                date: reqDateObj
             })
         })
     }
