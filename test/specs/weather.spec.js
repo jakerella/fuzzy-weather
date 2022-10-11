@@ -22,6 +22,7 @@ const LAT = 38.9649734
 const LNG = -77.0207249
 const TZ = 'America/New_York'
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const datetimeRegex = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{1,4}Z$/
 
 const locationData = {
     'latitude': LAT,
@@ -111,7 +112,7 @@ describe('Weather core', function() {
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
-                expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
+                expect(p).to.eventually.have.property('date').that.is.a('string').that.matches(datetimeRegex),
                 expect(p).to.eventually.have.property('detail').that.is.null,
                 expect(p).to.eventually.have.property('currently').that.is.null,
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
@@ -141,7 +142,7 @@ describe('Weather core', function() {
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
-                expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
+                expect(p).to.eventually.have.property('date').that.is.a('string').that.matches(datetimeRegex),
                 expect(p).to.eventually.have.property('dailySummary').that.is.a('object'),
                 expect(p).to.eventually.have.property('dailySummary')
                     .that.has.property('forecast').that.is.a('string'),
@@ -224,7 +225,7 @@ describe('Weather core', function() {
 
             return Promise.all([
                 expect(p).to.eventually.have.keys('date', 'currently', 'dailySummary', 'detail'),
-                expect(p).to.eventually.have.property('date').that.is.an.instanceof(Date),
+                expect(p).to.eventually.have.property('date').that.is.a('string').that.matches(datetimeRegex),
                 expect(p).to.eventually.have.property('detail').that.is.an('object'),
                 expect(p).to.eventually.have.property('detail').that.has.keys('data', 'forecast', 'conditions'),
                 expect(p).to.eventually.have.property('detail')

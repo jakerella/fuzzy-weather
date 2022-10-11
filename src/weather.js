@@ -1,4 +1,4 @@
-const debug = require('debug')('fuzzy-weather'),
+const debug = require('debug')('fuzzy-weather:init'),
     debugCurrently = require('debug')('fuzzy-weather:currently'),
     debugHourly = require('debug')('fuzzy-weather:hourly'),
     debugDaily = require('debug')('fuzzy-weather:daily'),
@@ -33,6 +33,7 @@ const OPTIONS = {
     highTempBreak: 95,
     lowTempBreak: 32,
     nightTempBreak: 15,
+    timezoneOffset: -240,
     __dataOverride: null   // @TODO: implement me
 }
 
@@ -48,7 +49,7 @@ module.exports = function(options = {}) {
      * @param  {String|Number} requestedDate Anything that can be passed into new Date() (OPTIONAL, will use current date otherwise)
      * @return {Promise}                     Will resolve (hopefully) with an object containing the weather report:
      *                                         {
-     *                                           date: Date,
+     *                                           date: String,         // The ISO String for the date of the forecast
      *                                           currently: Object,    // will be `null` if date is not current day
      *                                           dailySummary: Object,
      *                                           detail: Object        // will be `null` if the date is not within 48 hours
@@ -64,8 +65,6 @@ module.exports = function(options = {}) {
      */
     function getWeatherForDate(requestedDate) {
         return new Promise(async (resolve, reject) => {
-            debug('Getting weather for %s', requestedDate)
-
             if (!o.apiKey) {
                 debug('API key?', o.apiKey)
                 return reject(new Error('No API key provided'))
@@ -78,51 +77,66 @@ module.exports = function(options = {}) {
                 return reject(new Error('Lattitude and longitude must be provided and be numeric'))
             }
 
-            let now = new Date()
-            let todaySimple = moment(now).format('YYYY-MM-DD')
+            let now = moment().utcOffset(o.timezoneOffset)
+            let todaySimple = now.format('YYYY-MM-DD')
 
             // No date? no problem! Just get today's weather.
+            let reqDateObj
             if (!requestedDate) {
-                requestedDate = now.getTime()
+                reqDateObj = now
+            } else if (requestedDate instanceof Date || /Z/.test(''+requestedDate)) {
+                reqDateObj = moment(requestedDate)
+            } else {
+                // Assume the date/timestamp is local TZ, so apply an offset
+                reqDateObj = moment(requestedDate).utcOffset(o.timezoneOffset)
             }
 
-            let reqDateObj = new Date(requestedDate)
-            if (!reqDateObj.getTime()) {
+            if (isNaN(reqDateObj)) {
                 return reject(new Error('Please provide a valid date to check the weather for!'))
             }
-            reqDateObj.setHours(0)
-            let simpleDate = moment(reqDateObj).format('YYYY-MM-DD')
+            let simpleDate = reqDateObj.format('YYYY-MM-DD')
+
+            debug('Getting weather for %s', reqDateObj.format('YYYY-MM-DDTHH:mm:ss'))
 
             if (simpleDate < todaySimple) {
                 return reject(new Error(`Unable to get weather foreacast for date in the past (${simpleDate})`))
-            } else if (reqDateObj.getTime() > (now.getTime() + (86400000 * 7))) {
+            } else if (reqDateObj.diff(now, 'days') > 7) {
+                debug(`Date too far in future: ${reqDateObj.diff(now, 'days')}`)
                 return reject(new Error(`Only able to get weather for dates within 7 days of now (${simpleDate})`))
             }
 
-            const resp = await fetch(
-                `https://api.openweathermap.org/data/3.0/onecall?appid=${o.apiKey}&units=imperial&lat=${o.location.lat}&lon=${o.location.lng}`
-            )
-            if (!resp.ok) {
-                const data = await resp.text()
-                debug('Non-2XX status code from weather API:', resp.status, data)
-                return reject(new Error(`There was a problem getting weather data (${resp.status})`))
+            let data = {}
+            if (o.__dataOverride) {
+                data = o.__dataOverride
+                debug('Using data override with %d hourly entries and %d daily entries', data.hourly.length, data.daily.length)
+
+            } else {
+                const resp = await fetch(
+                    `https://api.openweathermap.org/data/3.0/onecall?appid=${o.apiKey}&units=imperial&lat=${o.location.lat}&lon=${o.location.lng}`
+                )
+                if (!resp.ok) {
+                    const data = await resp.text()
+                    debug('Non-2XX status code from weather API:', resp.status, data)
+                    return reject(new Error(`There was a problem getting weather data (${resp.status})`))
+                }
+
+                try {
+                    data = await resp.json()
+                } catch (err) {
+                    debug('Invalid JSON data from weather API:', err)
+                    return reject(new Error(`The API did not return valid data: ${err.message}`))
+                }
+
+                debug('Got raw data from API with %d hourly entries and %d daily entries', data.hourly.length, data.daily.length)
             }
 
-            let data
-            try {
-                data = await resp.json()
-            } catch (err) {
-                debug('Invalid JSON data from weather API:', err)
-                return reject(new Error(`The API did not return valid data: ${err.message}`))
-            }
-
-            debug('Got raw data from API with %d hourly entries and %d daily entries', data.hourly.length, data.daily.length)
+            debug('"Current" time on data is %s (UTC)', moment.unix(data.current.dt).utc().format('YYYY-MM-DD HH:mm:ss ddd'))
 
             resolve({
                 currently: getCurrentConditions(o, data, reqDateObj),
                 dailySummary: getDailySummary(o, data, reqDateObj),
                 detail: getDetail(o, data, reqDateObj),
-                date: reqDateObj
+                date: reqDateObj.toDate().toISOString()
             })
         })
     }
